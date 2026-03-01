@@ -1,0 +1,4 @@
+packages:
+  - application
+  - domain
+  - infrastructure
