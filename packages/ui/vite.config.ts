@@ -11,7 +11,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime', '@belairs-buvette/domain'],
+      external: ['react', 'react-dom', 'react/jsx-runtime', '@belair_buvette_frontend/domain'],
     },
   },
   test: {

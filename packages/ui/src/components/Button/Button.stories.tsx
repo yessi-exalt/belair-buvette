@@ -1,36 +1,36 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from './Button';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./button";
 
 const meta: Meta<typeof Button> = {
-  title: 'Design System/Button',
+  title: "Design System/Button",
   component: Button,
-  tags: ['autodocs'],
+  tags: ["autodocs"],
   argTypes: {
     variant: {
-      control: 'select',
-      options: ['primary', 'secondary', 'ghost', 'danger'],
-      description: 'Visual style of the button',
+      control: "select",
+      options: ["primary", "secondary", "ghost", "danger"],
+      description: "Visual style of the button",
     },
     size: {
-      control: 'select',
-      options: ['sm', 'md', 'lg'],
-      description: 'Size of the button',
+      control: "select",
+      options: ["sm", "md", "lg"],
+      description: "Size of the button",
     },
     fullWidth: {
-      control: 'boolean',
-      description: 'Whether the button fills its container width',
+      control: "boolean",
+      description: "Whether the button fills its container width",
     },
     isLoading: {
-      control: 'boolean',
-      description: 'Loading state',
+      control: "boolean",
+      description: "Loading state",
     },
     disabled: {
-      control: 'boolean',
-      description: 'Disabled state',
+      control: "boolean",
+      description: "Disabled state",
     },
     children: {
-      control: 'text',
-      description: 'Button label',
+      control: "text",
+      description: "Button label",
     },
   },
 };
@@ -42,8 +42,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
-    children: 'Primary button',
-    variant: 'primary',
+    children: "Primary button",
+    variant: "primary",
   },
 };
 
@@ -51,8 +51,8 @@ export const Primary: Story = {
 
 export const Secondary: Story = {
   args: {
-    children: 'Secondary button',
-    variant: 'secondary',
+    children: "Secondary button",
+    variant: "secondary",
   },
 };
 
@@ -60,8 +60,8 @@ export const Secondary: Story = {
 
 export const Ghost: Story = {
   args: {
-    children: 'Ghost button',
-    variant: 'ghost',
+    children: "Ghost button",
+    variant: "ghost",
   },
 };
 
@@ -69,8 +69,8 @@ export const Ghost: Story = {
 
 export const Danger: Story = {
   args: {
-    children: 'Delete',
-    variant: 'danger',
+    children: "Delete",
+    variant: "danger",
   },
 };
 
@@ -78,22 +78,22 @@ export const Danger: Story = {
 
 export const Small: Story = {
   args: {
-    children: 'Small',
-    size: 'sm',
+    children: "Small",
+    size: "sm",
   },
 };
 
 export const Medium: Story = {
   args: {
-    children: 'Medium',
-    size: 'md',
+    children: "Medium",
+    size: "md",
   },
 };
 
 export const Large: Story = {
   args: {
-    children: 'Large',
-    size: 'lg',
+    children: "Large",
+    size: "lg",
   },
 };
 
@@ -101,21 +101,21 @@ export const Large: Story = {
 
 export const Loading: Story = {
   args: {
-    children: 'Saving…',
+    children: "Saving…",
     isLoading: true,
   },
 };
 
 export const Disabled: Story = {
   args: {
-    children: 'Disabled',
+    children: "Disabled",
     disabled: true,
   },
 };
 
 export const FullWidth: Story = {
   args: {
-    children: 'Full width button',
+    children: "Full width button",
     fullWidth: true,
   },
 };
@@ -124,7 +124,14 @@ export const FullWidth: Story = {
 
 export const AllVariants: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "12px",
+        flexWrap: "wrap",
+        alignItems: "center",
+      }}
+    >
       <Button variant="primary">Primary</Button>
       <Button variant="secondary">Secondary</Button>
       <Button variant="ghost">Ghost</Button>
@@ -135,7 +142,7 @@ export const AllVariants: Story = {
 
 export const AllSizes: Story = {
   render: () => (
-    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+    <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
       <Button size="sm">Small</Button>
       <Button size="md">Medium</Button>
       <Button size="lg">Large</Button>

@@ -1,5 +1,5 @@
 {
-  "name": "@belairs-buvette/ui",
+  "name": "@belair_buvette_frontend/ui",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -22,7 +22,7 @@
     "clean": "rm -rf dist storybook-static *.tsbuildinfo"
   },
   "dependencies": {
-    "@belairs-buvette/domain": "workspace:*",
+    "@belair_buvette_frontend/domain": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

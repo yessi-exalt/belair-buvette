@@ -1,5 +1,5 @@
 {
-  "name": "belairs-buvette",
+  "name": "belair_buvette_frontend",
   "version": "0.0.0",
   "private": true,
   "engines": {
@@ -11,8 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "storybook": "pnpm --filter @belairs-buvette/ui storybook",
-    "build-storybook": "pnpm --filter @belairs-buvette/ui build-storybook",
+    "storybook": "pnpm --filter @belair_buvette_frontend/ui storybook",
+    "build-storybook": "pnpm --filter @belair_buvette_frontend/ui build-storybook",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean"

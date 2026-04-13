@@ -9,7 +9,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['@belairs-buvette/domain', '@belairs-buvette/application'],
+      external: ['@belair_buvette_frontend/domain', '@belair_buvette_frontend/application'],
     },
   },
   test: {

@@ -12,4 +12,4 @@ export * from './tokens';
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 // Import global CSS from your application root, or in your Storybook preview:
-// import '@belairs-buvette/ui/src/styles/global.css';
+// import '@belair_buvette_frontend/ui/src/styles/global.css';

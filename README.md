@@ -18,7 +18,7 @@ But more importantly, your new best friend: Github Copilot, your new rubber duck
 ## Project Structure
 
 ```
-belairs-buvette/
+belair_buvette_frontend/
  packages/
   domain/           # Core business logic, entities and domain interfaces
   application/      # Use cases and application services
@@ -50,7 +50,7 @@ Fork this repository to your own Gitlab account (main branch only), then clone i
 
 ```bash
 git clone <YOUR_FORK_URL>
-cd belairs-buvette
+cd belair_buvette_frontend
 ```
 
 ### Install dependencies

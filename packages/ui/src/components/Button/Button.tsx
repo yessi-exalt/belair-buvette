@@ -1,10 +1,11 @@
-import React from 'react';
-import styles from './Button.module.css';
+import React from "react";
+import styles from "./button.module.css";
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** Visual style of the button */
   variant?: ButtonVariant;
   /** Size of the button */
@@ -27,8 +28,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
-      variant = 'primary',
-      size = 'md',
+      variant = "primary",
+      size = "md",
       fullWidth = false,
       isLoading = false,
       iconLeft,
@@ -49,19 +50,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           styles.button,
           styles[`variant-${variant}`],
           styles[`size-${size}`],
-          fullWidth ? styles.fullWidth : '',
-          isLoading ? styles.loading : '',
-          className ?? '',
+          fullWidth ? styles.fullWidth : "",
+          isLoading ? styles.loading : "",
+          className ?? "",
         ]
           .filter(Boolean)
-          .join(' ')}
+          .join(" ")}
         disabled={isDisabled}
         aria-busy={isLoading}
         {...rest}
       >
-        {isLoading && (
-          <span className={styles.spinner} aria-hidden="true" />
-        )}
+        {isLoading && <span className={styles.spinner} aria-hidden="true" />}
         {!isLoading && iconLeft && (
           <span className={styles.iconLeft} aria-hidden="true">
             {iconLeft}
@@ -78,4 +77,4 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 
-Button.displayName = 'Button';
+Button.displayName = "Button";

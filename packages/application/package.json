@@ -1,5 +1,5 @@
 {
-  "name": "@belairs-buvette/application",
+  "name": "@belair_buvette_frontend/application",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@belairs-buvette/domain": "workspace:*"
+    "@belair_buvette_frontend/domain": "workspace:*"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.0",

@@ -18,7 +18,7 @@ Mais plus important encore, votre nouveau meilleur ami : GitHub Copilot, votre c
 ## Structure du projet
 
 ```
-belairs-buvette/
+belair_buvette_frontend/
  packages/
   domain/           # Logique métier, entités et interfaces de domaine
   application/      # Cas d'usage et services applicatifs
@@ -50,7 +50,7 @@ Forkez ce dépôt sur votre propre compte Gitlab (branche main uniquement), puis
 
 ```bash
 git clone <URL_DE_VOTRE_FORK>
-cd belairs-buvette
+cd belair_buvette_frontend
 ```
 
 ### Installer les dépendances
