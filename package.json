@@ -1,0 +1,26 @@
+{
+  "name": "belair-buvette",
+  "private": true,
+  "scripts": {
+    "build": "pnpm run build:api && pnpm run build:frontend",
+    "build:api": "pnpm --dir ./belair_buvette_api build",
+    "build:frontend": "pnpm --dir ./belair_buvette_frontend build",
+    "test": "pnpm run test:api && pnpm run test:frontend",
+    "test:api": "pnpm --dir ./belair_buvette_api test",
+    "test:frontend": "pnpm --dir ./belair_buvette_frontend test",
+    "test:watch:api": "pnpm --dir ./belair_buvette_api test:watch",
+    "test:watch:frontend": "pnpm --dir ./belair_buvette_frontend test:watch",
+    "test:coverage:frontend": "pnpm --dir ./belair_buvette_frontend test:coverage",
+    "lint": "pnpm --dir ./belair_buvette_frontend lint",
+    "typecheck": "pnpm --dir ./belair_buvette_frontend typecheck",
+    "storybook": "pnpm --dir ./belair_buvette_frontend storybook",
+    "build-storybook": "pnpm --dir ./belair_buvette_frontend build-storybook",
+    "validate:issues": "pnpm run validate:issues:api && pnpm run validate:issues:frontend",
+    "validate:issues:api": "pnpm --dir ./belair_buvette_api validate:issues",
+    "validate:issues:frontend": "pnpm --dir ./belair_buvette_frontend validate:issues"
+  },
+  "engines": {
+    "node": ">=24.14.0",
+    "pnpm": ">=9.0.0"
+  }
+}

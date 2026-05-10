@@ -1,0 +1,7 @@
+packages:
+  - belair_buvette_api
+  - belair_buvette_api/application
+  - belair_buvette_api/domain
+  - belair_buvette_api/infrastructure
+  - belair_buvette_frontend
+  - belair_buvette_frontend/packages/*
