@@ -1,0 +1,16 @@
+{
+  "name": "@belairs-buvette/infrastructure",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@belairs-buvette/domain": "workspace:*"
+  }
+}
