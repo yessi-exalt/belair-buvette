@@ -6,19 +6,24 @@ Le package application doit orchestrer la saisie de l'identifiant du destinatair
 **Critères d'acceptation**
 Feature: Token transfer application use case
 
-1. Scenario: Soumettre un transfert valide
-    Given un festivalier avec 4 drink tokens transfère 2 drink tokens au destinataire "user-42"
+1. Scenario: Soumettre un transfert valide avec les deux types de tokens
+    Given un festivalier avec 4 drink tokens et 3 food tokens transfère 2 drink tokens et 1 food token au destinataire "user-42"
     When l'application soumet le transfert
-    Then le transfert est envoyé à l'infrastructure avec les montants et l'identifiant destinataire
-    And le solde restant est 2 drink tokens
+    Then le transfert est envoyé à l'infrastructure avec les deux montants et l'identifiant destinataire
+    And le résultat contient les soldes mis à jour pour la page d'accueil
 
-2. Scenario: Refuser un transfert dépassant le solde
-    Given un festivalier avec 1 drink token tente de transférer 2 drink tokens
+2. Scenario: Refuser un transfert dépassant le maximum ou le solde disponible
+    Given un festivalier avec 2 drink tokens et 1 food token tente de transférer 2 drink tokens et 2 food tokens
     When l'application valide le transfert
-    Then le transfert est rejeté avec une erreur de solde insuffisant
+    Then le transfert est rejeté avec une erreur de validation
     And aucune requête n'est envoyée
 
 3. Scenario: Retourner une erreur si le destinataire est introuvable
     Given un identifiant destinataire inconnu
     When l'application soumet le transfert
     Then elle retourne une erreur de destinataire introuvable
+
+4. Scenario: Préparer la mise à jour du solde de la page d'accueil après succès
+    Given un transfert valide vient d'être confirmé
+    When l'application reçoit la réponse de succès
+    Then elle expose les nouveaux soldes drink tokens et food tokens

@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "validate:issues": "python3 .github/skills/run-issue-validator.py",
     "storybook": "pnpm --filter @belair_buvette_frontend/ui storybook",
     "build-storybook": "pnpm --filter @belair_buvette_frontend/ui build-storybook",
     "lint": "pnpm -r lint",

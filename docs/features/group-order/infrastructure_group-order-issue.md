@@ -9,13 +9,14 @@ Feature: Group order infrastructure adapter
 1. Scenario: Charger les informations d'une commande groupée par code
     Given l'API retourne les données de la commande groupée pour le code "GRP-001"
     When l'adapter HTTP appelle le endpoint de commande groupée
-    Then il retourne le résumé mappé avec le total groupé et le coût restant
+    Then il retourne le résumé mappé avec les totaux groupés en drink tokens et food tokens
+    And il retourne le coût restant et la part de chaque contributeur
 
-2. Scenario: Envoyer la contribution à l'API
+2. Scenario: Envoyer une contribution mixte à l'API
     Given une contribution de 2 drink tokens et 1 food token
     When l'adapter HTTP envoie la contribution
     Then il appelle le endpoint de contribution une seule fois
-    And le corps de la requête contient les montants contributés
+    And le corps de la requête contient les montants de drink tokens et food tokens
 
 3. Scenario: Gérer un code de commande groupée invalide
     Given l'API répond avec une erreur 404 pour le code saisi

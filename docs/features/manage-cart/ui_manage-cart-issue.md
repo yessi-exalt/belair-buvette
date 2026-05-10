@@ -6,21 +6,28 @@ Le composant panier (sidebar ou drawer) affiche les articles sélectionnés, le 
 **Critères d'acceptation**
 Feature: Manage cart UI
 
-1. Scenario: Ajouter plusieurs boissons et afficher le total courant
-    Given un festivalier avec 4 drink tokens sur la page menu
-    When il ajoute 1 boisson non alcoolisée, 1 boisson normale et 1 boisson premium au panier
-    Then le panier affiche 3 articles sélectionnés
-    And le total en drink tokens affiché est 3
+1. Scenario: Afficher le panier dans un drawer avec les sous-totaux drink et food
+    Given un festivalier ajoute 1 boisson alcoolisée normale et 1 snack au panier
+    When le drawer du panier est rendu
+    Then le panier affiche les 2 articles sélectionnés
+    And le sous-total drink affiché est 1 drink token
+    And le sous-total food affiché est 1 food token
 
-2. Scenario: Désactiver le bouton "Add to cart" quand le solde est insuffisant
-    Given un festivalier avec 1 drink token
-    And un panier contenant 1 boisson alcoolisée normale
-    When la page menu est rendue avec la boisson premium visible
-    Then le bouton "Add to cart" de la boisson premium est désactivé
+2. Scenario: Ajuster la quantité d'un article depuis le panier
+    Given un panier contenant 1 snack
+    When le festivalier augmente la quantité du snack à 2
+    Then la quantité affichée pour le snack est 2
+    And le sous-total food affiché est 2 food tokens
+
+3. Scenario: Supprimer un article du panier et mettre à jour les sous-totaux
+    Given un panier contenant 1 boisson alcoolisée normale et 1 meal
+    When le festivalier supprime le meal du panier
+    Then le meal n'est plus visible dans le panier
+    And le sous-total food affiché est 0 food token
+
+4. Scenario: Désactiver le bouton Add to cart quand l'ajout dépasserait le solde
+    Given un festivalier avec 1 food token
+    And un panier contenant déjà 1 snack
+    When la page menu est rendue avec un meal visible
+    Then le bouton "Add to cart" du meal est désactivé
     And un tooltip expliquant l'insuffisance de solde est accessible
-
-3. Scenario: Supprimer un article du panier et mettre à jour le total
-    Given un panier contenant 1 boisson normale et 1 boisson premium
-    When le festivalier supprime la boisson premium du panier
-    Then la boisson premium n'est plus dans le panier
-    And le total en drink tokens affiché est 1

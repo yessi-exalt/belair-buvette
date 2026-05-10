@@ -6,19 +6,25 @@ Le package domain doit modéliser le panier en séparant le coût total en drink
 **Critères d'acceptation**
 Feature: Manage cart domain model
 
-1. Scenario: Calculer le total de drink tokens d'un panier mixte
-    Given un panier contenant 1 boisson non alcoolisée, 1 boisson alcoolisée normale et 1 boisson premium
-    When le domain calcule le total en drink tokens
-    Then le total est 3 drink tokens
+1. Scenario: Calculer séparément les sous-totaux drink et food d'un panier mixte
+    Given un panier contenant 1 boisson alcoolisée normale et 1 meal
+    When le domain calcule les sous-totaux du panier
+    Then le sous-total drink est 1 drink token
+    And le sous-total food est 3 food tokens
 
-2. Scenario: Empêcher l'ajout d'un article qui dépasserait le solde disponible
-    Given un festivalier avec 2 drink tokens
-    And un panier contenant déjà 1 boisson alcoolisée normale
-    When le domain évalue si une boisson premium peut être ajoutée
-    Then l'ajout est refusé car le total dépasserait le solde
+2. Scenario: Recalculer les sous-totaux quand la quantité d'un article change
+    Given un panier contenant 1 snack
+    When le domain augmente la quantité du snack à 2
+    Then le sous-total food est 2 food tokens
 
-3. Scenario: Autoriser l'ajout d'un article gratuit même avec un solde nul
-    Given un festivalier avec 0 drink token
-    And un panier vide
-    When le domain évalue si une boisson non alcoolisée peut être ajoutée
-    Then l'ajout est autorisé car son coût est nul
+3. Scenario: Mettre à jour les sous-totaux après la suppression d'un article
+    Given un panier contenant 1 boisson alcoolisée normale et 1 meal
+    When le domain supprime le meal
+    Then le sous-total drink reste 1 drink token
+    And le sous-total food devient 0 food token
+
+4. Scenario: Empêcher l'ajout d'un article qui dépasserait le solde disponible
+    Given un festivalier avec 2 food tokens
+    And un panier contenant déjà 1 snack
+    When le domain évalue si un meal peut être ajouté
+    Then l'ajout est refusé car le total dépasserait le solde food disponible

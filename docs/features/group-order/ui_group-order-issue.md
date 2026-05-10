@@ -11,13 +11,20 @@ Feature: Group order UI
     When la page de commande groupée est rendue
     Then un champ de saisie pour le code de commande groupée est affiché
 
-2. Scenario: Afficher le résumé après saisie d'un code valide
+2. Scenario: Limiter les sélecteurs de contribution par les soldes disponibles
+    Given un festivalier avec 2 drink tokens et 1 food token
+    When l'écran de contribution est affiché
+    Then le sélecteur de drink tokens ne dépasse pas 2
+    And le sélecteur de food tokens ne dépasse pas 1
+
+3. Scenario: Afficher le résumé groupé avec tous les montants attendus
     Given le festivalier saisit un code valide et charge la commande groupée
     When le résumé est rendu
-    Then le total groupé, le coût restant et la part de chaque contributeur sont affichés
+    Then le total groupé en drink tokens et food tokens est affiché
+    And le coût restant et la part de chaque contributeur sont affichés
 
-3. Scenario: Sélectionner la contribution et la valider
-    Given un festivalier avec 4 drink tokens sur l'écran de sélection
-    When il sélectionne 2 drink tokens et confirme sa contribution
-    Then l'application soumet la contribution avec les montants sélectionnés
+4. Scenario: Soumettre la contribution et rediriger vers Order Status
+    Given un festivalier sélectionne 2 drink tokens et 1 food token pour contribuer
+    When il confirme sa contribution
+    Then l'application soumet la contribution avec les deux montants sélectionnés
     And le festivalier est redirigé vers la page Order Status

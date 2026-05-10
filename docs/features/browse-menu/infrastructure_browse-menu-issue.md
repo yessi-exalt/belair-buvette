@@ -11,12 +11,18 @@ Feature: Browse menu infrastructure adapter
     When l'adapter HTTP appelle le endpoint menu
     Then il retourne 5 articles mappés en modèles domain
 
-2. Scenario: Distinguer les catégories boissons et nourriture dans la réponse
-    Given l'API retourne 2 boissons et 3 plats
+2. Scenario: Mapper les catégories et sous-catégories attendues
+    Given l'API retourne des articles Non-Alcoholic, Alcoholic Normal, Alcoholic Premium, Snack et Meal
     When l'adapter HTTP mappe la réponse
-    Then 2 articles sont de catégorie boissons et 3 de catégorie nourriture
+    Then les articles boissons sont rattachés à la section Drinks avec leurs sous-catégories
+    And les articles nourriture sont rattachés à la section Food avec leurs sous-catégories
 
-3. Scenario: Retourner une erreur de transport en cas d'échec réseau
+3. Scenario: Conserver le coût nul d'une boisson non alcoolisée
+    Given l'API retourne une boisson non alcoolisée avec un coût nul
+    When l'adapter HTTP mappe la réponse
+    Then le modèle retourné conserve un coût de 0 drink token
+
+4. Scenario: Retourner une erreur de transport en cas d'échec réseau
     Given la requête réseau vers le endpoint menu échoue
     When l'adapter HTTP tente de récupérer le menu
     Then il retourne un résultat de type transport failure

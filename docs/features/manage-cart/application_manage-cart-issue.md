@@ -6,22 +6,28 @@ Le package application gère l'état du panier : ajout d'articles, suppression, 
 **Critères d'acceptation**
 Feature: Manage cart application use case
 
-1. Scenario: Ajouter un article au panier quand le solde est suffisant
-    Given un festivalier avec 4 drink tokens
+1. Scenario: Ajouter un article au panier et mettre à jour les sous-totaux en temps réel
+    Given un festivalier avec 4 drink tokens et 4 food tokens
     And un panier vide
-    When l'application ajoute 1 boisson alcoolisée normale
-    Then le panier contient 1 article
-    And le total affiché est 1 drink token
+    When l'application ajoute 1 boisson alcoolisée normale et 1 snack
+    Then le panier contient 2 articles
+    And le sous-total drink affiché est 1 drink token
+    And le sous-total food affiché est 1 food token
 
-2. Scenario: Refuser l'ajout d'un article quand le solde est insuffisant
-    Given un festivalier avec 1 drink token
-    And un panier contenant déjà 1 boisson alcoolisée normale
-    When l'application tente d'ajouter 1 boisson premium
-    Then l'ajout est refusé
-    And le panier reste inchangé
+2. Scenario: Ajuster la quantité d'un article et recalculer les sous-totaux
+    Given un panier contenant 1 snack
+    When l'application augmente la quantité du snack à 2
+    Then le sous-total food affiché est 2 food tokens
 
-3. Scenario: Supprimer un article du panier et mettre à jour le total
-    Given un panier contenant 1 boisson alcoolisée normale et 1 boisson premium
-    When l'application supprime la boisson premium
+3. Scenario: Supprimer un article du panier et mettre à jour les sous-totaux
+    Given un panier contenant 1 boisson alcoolisée normale et 1 meal
+    When l'application supprime le meal
     Then le panier contient uniquement la boisson alcoolisée normale
-    And le total affiché est 1 drink token
+    And le sous-total food affiché est 0 food token
+
+4. Scenario: Refuser l'ajout d'un article quand le solde est insuffisant
+    Given un festivalier avec 1 food token
+    And un panier contenant déjà 1 snack
+    When l'application tente d'ajouter 1 meal
+    Then l'ajout est refusé
+    And l'état retourné explique qu'un tooltip doit être affiché
