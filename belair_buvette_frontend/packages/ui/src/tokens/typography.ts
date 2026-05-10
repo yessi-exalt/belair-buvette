@@ -1,0 +1,43 @@
+/**
+ * Design Tokens — Typography
+ *
+ * Define your font families, sizes, weights and line heights here.
+ */
+export const typographyTokens = {
+  // ─── Font families ──────────────────────────────────────────────────────────
+  'font-family-sans': "'Inter', system-ui, -apple-system, sans-serif",
+  'font-family-mono': "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
+
+  // ─── Font sizes ─────────────────────────────────────────────────────────────
+  'font-size-xs': '0.75rem',    // 12px
+  'font-size-sm': '0.875rem',   // 14px
+  'font-size-base': '1rem',     // 16px
+  'font-size-lg': '1.125rem',   // 18px
+  'font-size-xl': '1.25rem',    // 20px
+  'font-size-2xl': '1.5rem',    // 24px
+  'font-size-3xl': '1.875rem',  // 30px
+  'font-size-4xl': '2.25rem',   // 36px
+  'font-size-5xl': '3rem',      // 48px
+
+  // ─── Font weights ───────────────────────────────────────────────────────────
+  'font-weight-regular': '400',
+  'font-weight-medium': '500',
+  'font-weight-semibold': '600',
+  'font-weight-bold': '700',
+
+  // ─── Line heights ───────────────────────────────────────────────────────────
+  'line-height-tight': '1.25',
+  'line-height-snug': '1.375',
+  'line-height-normal': '1.5',
+  'line-height-relaxed': '1.625',
+  'line-height-loose': '2',
+
+  // ─── Letter spacing ─────────────────────────────────────────────────────────
+  'letter-spacing-tight': '-0.025em',
+  'letter-spacing-normal': '0em',
+  'letter-spacing-wide': '0.025em',
+  'letter-spacing-wider': '0.05em',
+  'letter-spacing-widest': '0.1em',
+} as const;
+
+export type TypographyToken = keyof typeof typographyTokens;

@@ -1,0 +1,26 @@
+{
+  "name": "belair_buvette_frontend",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.14.0",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter './packages/**' build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "validate:issues": "python3 .github/skills/run-issue-validator.py",
+    "storybook": "pnpm --filter @belair_buvette_frontend/ui storybook",
+    "build-storybook": "pnpm --filter @belair_buvette_frontend/ui build-storybook",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
+    "typescript": "^5.8.0",
+    "vitest": "^2.1.0"
+  }
+}
