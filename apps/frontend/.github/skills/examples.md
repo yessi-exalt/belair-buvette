@@ -1,186 +1,182 @@
 # Examples
 
-Use these examples to infer the expected level of decomposition, the output format,
-and when to ask for clarification instead of inventing missing requirements.
+Use these examples to infer the expected level of decomposition across frontend
+packages, the required file naming, and when to ask for clarification instead
+of inventing missing requirements.
 
-## Positive Example 1: simple request, single feature + shared UI
+Even when the user request mentions a page, a shared component, or a feature
+slice, the generated issue files must still use the repository package prefixes:
+`domain_`, `application_`, `infrastructure_`, and `ui_`.
+
+## Positive Example 1: simple request, one feature across three packages
 
 Input: "As a festival goer, I want to add items to a cart and see the running total"
 
 Output:
-Two files: one for the order-cart feature slice, one for the shared token-balance utility component.
+Three files: one for the domain rules, one for the application orchestration, and one for the rendered UI.
 
-file `docs/features/order-cart/feature_order-cart-issue.md`
+file `docs/features/manage-cart/domain_manage-cart-issue.md`
 ```markdown
-# Order Cart : Feature Slice impact (order-cart)
-**Context**
-A festival goer wants to add drink and food items to a cart and see the running
-drink and food token totals update in real time before placing their order.
+# Gérer le panier : impact package domain
 
-**Acceptance Criteria**
-Feature: Add items to cart and see the running total
+**Contexte**
+Le package domain doit modéliser le panier en séparant le coût total en drink
+tokens et en food tokens. Il doit exposer une règle permettant de déterminer si
+un article peut être ajouté compte tenu du solde courant.
 
-1. Scenario: Add a drink item to an empty cart
-    Given an authenticated festival goer with 6 drink tokens and an empty cart
-    When they click "Add to cart" on a normal alcoholic drink
-    Then the cart sidebar shows 1 item
-    And the running drink token total displays 1
+**Critères d'acceptation**
+Feature: Manage cart domain model
 
-2. Scenario: Running total updates for mixed items
-    Given a festival goer with 6 drink tokens and 9 food tokens
-    When they add 1 premium alcoholic drink and 1 meal to the cart
-    Then the drink token subtotal displays 2
-    And the food token subtotal displays 3
+1. Scenario: Calculer séparément les sous-totaux drink et food d'un panier mixte
+    Given un panier contenant 1 boisson alcoolisée normale et 1 meal
+    When le domain calcule les sous-totaux du panier
+    Then le sous-total drink est 1 drink token
+    And le sous-total food est 3 food tokens
 
-3. Scenario: Add button is disabled when balance would be exceeded
-    Given a festival goer with 1 drink token
-    And a premium alcoholic drink (cost: 2 tokens) in the catalogue
-    When the cart is rendered
-    Then the "Add to cart" button for the premium drink is disabled
-    And a tooltip "Not enough drink tokens" is visible on hover
-
-4. Scenario: Remove an item from the cart
-    Given a cart with 1 normal alcoholic drink
-    When the festival goer clicks the remove icon on that item
-    Then the cart is empty
-    And the running drink token total displays 0
-
-5. Scenario: Adjust item quantity in the cart
-    Given a cart with 1 non-alcoholic drink
-    When the festival goer increases the quantity to 3
-    Then the cart shows quantity 3 for that item
-    And the food token subtotal remains 0
+2. Scenario: Empêcher l'ajout d'un article qui dépasserait le solde disponible
+    Given un festivalier avec 2 food tokens
+    And un panier contenant déjà 1 snack
+    When le domain évalue si un meal peut être ajouté
+    Then l'ajout est refusé car le total dépasserait le solde food disponible
 ```
 
-file `docs/features/order-cart/shared_token-balance-display-issue.md`
+file `docs/features/manage-cart/application_manage-cart-issue.md`
 ```markdown
-# Token Balance Display : Shared Layer impact
-**Context**
-A reusable TokenBalance component is needed to display drink and food token counts
-consistently across the cart, order status page, and menu page.
+# Gérer le panier : impact package application
 
-**Acceptance Criteria**
-Feature: Token balance display component
+**Contexte**
+Le package application gère l'état du panier : ajout d'articles, suppression,
+ajustement des quantités et mise à jour du total en temps réel. Il vérifie que
+chaque ajout reste compatible avec le solde courant avant de modifier l'état.
 
-1. Scenario: Render a normal balance
-    Given drinkTokens = 4 and foodTokens = 7
-    When the TokenBalance component is rendered
-    Then it displays "4" for drink tokens with the drink icon
-    And it displays "7" for food tokens with the food icon
+**Critères d'acceptation**
+Feature: Manage cart application use case
 
-2. Scenario: Render a zero drink token balance
-    Given drinkTokens = 0 and foodTokens = 5
-    When the TokenBalance component is rendered
-    Then the drink token count is greyed out
-    And the label "No drink tokens remaining" is visible
+1. Scenario: Ajouter un article au panier et mettre à jour les sous-totaux en temps réel
+    Given un festivalier avec 4 drink tokens et 4 food tokens
+    And un panier vide
+    When l'application ajoute 1 boisson alcoolisée normale et 1 snack
+    Then le panier contient 2 articles
+    And le sous-total drink affiché est 1 drink token
+    And le sous-total food affiché est 1 food token
 
-3. Scenario: Render a fully zero balance
-    Given drinkTokens = 0 and foodTokens = 0
-    When the TokenBalance component is rendered
-    Then both counts are greyed out
-    And the label "No tokens remaining" is visible for each type
-
-4. Scenario: Component is responsive
-    Given the TokenBalance component
-    When rendered on a mobile viewport (375px)
-    Then it remains legible and does not overflow its container
+2. Scenario: Refuser l'ajout d'un article quand le solde est insuffisant
+    Given un festivalier avec 1 food token
+    And un panier contenant déjà 1 snack
+    When l'application tente d'ajouter 1 meal
+    Then l'ajout est refusé
+    And l'état retourné explique qu'un tooltip doit être affiché
 ```
 
-## Positive Example 2: complex request, multiple frontend slices
+file `docs/features/manage-cart/ui_manage-cart-issue.md`
+```markdown
+# Gérer le panier : impact package ui
+
+**Contexte**
+Le composant panier affiche les articles sélectionnés, les sous-totaux courants,
+et les contrôles d'ajout ou de suppression avec les états désactivés attendus.
+
+**Critères d'acceptation**
+Feature: Manage cart UI
+
+1. Scenario: Afficher le panier dans un drawer avec les sous-totaux drink et food
+    Given un festivalier ajoute 1 boisson alcoolisée normale et 1 snack au panier
+    When le drawer du panier est rendu
+    Then le panier affiche les 2 articles sélectionnés
+    And le sous-total drink affiché est 1 drink token
+    And le sous-total food affiché est 1 food token
+
+2. Scenario: Désactiver le bouton Add to cart quand l'ajout dépasserait le solde
+    Given un festivalier avec 1 food token
+    And un panier contenant déjà 1 snack
+    When la page menu est rendue avec un meal visible
+    Then le bouton "Add to cart" du meal est désactivé
+    And un tooltip expliquant l'insuffisance de solde est accessible
+```
+
+## Positive Example 2: complex request, one feature across all packages
 
 Input: "As a festival goer, I want to place my order from the cart, confirm it, and then track it from the order status page"
 
 Output:
-Three files: one for the order-cart feature slice, one for the order-confirmation feature slice, and one for the order-status page flow.
+Four files: one per impacted package for the `order-status` feature.
 
-file `docs/features/order-cart/feature_place-order-from-cart-issue.md`
+file `docs/features/order-status/domain_order-status-issue.md`
 ```markdown
-# Place Order From Cart : Feature Slice impact (order-cart)
-**Context**
-The existing cart must validate balances, expose a place-order action, and remain the source
-of truth for the pending order payload.
+# Suivre une commande : impact package domain
 
-**Acceptance Criteria**
-Feature: Place order from cart
+**Contexte**
+Le package domain décrit l'état affichable d'une commande, ses transitions, et
+les informations dérivées comme le texte lisible et les indicateurs temporels.
 
-1. Scenario: Place Order button is enabled for a valid cart
-    Given a cart containing 1 snack and 1 normal alcoholic drink
-    And the festival goer has 9 food tokens and 6 drink tokens
-    When the cart drawer is rendered
-    Then the "Place Order" button is enabled
+**Critères d'acceptation**
+Feature: Order status domain model
 
-2. Scenario: Place Order button is disabled for an empty cart
-    Given an empty cart
-    When the cart drawer is rendered
-    Then the "Place Order" button is disabled
-
-3. Scenario: Place Order button is disabled when totals exceed balance
-    Given a cart total of 3 drink tokens
-    And the festival goer has 2 drink tokens remaining
-    When the cart drawer is rendered
-    Then the "Place Order" button is disabled
-    And an explanatory message is visible
+1. Scenario: Exposer un libellé lisible pour une commande prête
+    Given une commande dans l'état Ready for Pickup
+    When le domain expose son état de suivi
+    Then le libellé affichable est cohérent avec une commande prête à être retirée
 ```
 
-file `docs/features/order-confirmation/feature_order-confirmation-issue.md`
+file `docs/features/order-status/application_order-status-issue.md`
 ```markdown
-# Order Confirmation : Feature Slice impact (order-confirmation)
-**Context**
-Before submission, the festival goer must review a confirmation modal summarizing the order,
-its token cost, and the estimated preparation time.
+# Suivre une commande : impact package application
 
-**Acceptance Criteria**
-Feature: Confirm an order before submission
+**Contexte**
+Le package application orchestre le chargement initial de la commande et le
+rafraîchissement périodique de son statut pour la page de suivi.
 
-1. Scenario: Open the confirmation modal from the cart
-    Given a non-empty valid cart
-    When the festival goer clicks "Place Order"
-    Then a confirmation modal opens
-    And it lists all items, quantities, drink subtotal, and food subtotal
+**Critères d'acceptation**
+Feature: Order status application flow
 
-2. Scenario: Confirm submission successfully
-    Given the confirmation modal is open
-    When the festival goer clicks "Confirm order"
-    Then the order is submitted once
-    And the cart is cleared
-    And the user is redirected to the Order Status page
+1. Scenario: Charger une commande à partir de son identifiant
+    Given un identifiant de commande connu
+    When l'application initialise le suivi de commande
+    Then elle demande la commande correspondante à l'infrastructure
 
-3. Scenario: Submission failure preserves the cart
-    Given the confirmation modal is open
-    And the backend returns a network error
-    When the festival goer clicks "Confirm order"
-    Then an error toast is displayed
-    And the cart contents remain unchanged
+2. Scenario: Rafraîchir automatiquement le statut de la commande
+    Given la page de suivi est ouverte
+    When 30 secondes s'écoulent
+    Then l'application déclenche un nouveau chargement du statut
 ```
 
-file `docs/features/order-status/page_order-status-issue.md`
+file `docs/features/order-status/infrastructure_order-status-issue.md`
 ```markdown
-# Order Status Page : Page impact
-**Context**
-After order placement, the festival goer needs a dedicated page to monitor the order lifecycle.
+# Suivre une commande : impact package infrastructure
 
-**Acceptance Criteria**
-Feature: Track current order status
+**Contexte**
+Le package infrastructure traduit les appels de l'application vers l'API et mappe
+la réponse HTTP vers le modèle consommé par le frontend.
 
-1. Scenario: Redirect to order status after confirmation
-    Given the order submission succeeds
-    When the frontend receives the created order id
-    Then it navigates to the Order Status page for that order
+**Critères d'acceptation**
+Feature: Order status infrastructure adapter
 
-2. Scenario: Show acknowledgement countdown
-    Given an order in Acknowledged state with 6 minutes remaining
-    When the page renders
-    Then a live countdown is displayed
+1. Scenario: Mapper une réponse API de commande vers le modèle frontend
+    Given une réponse backend contenant un statut de commande et un temps restant
+    When l'adaptateur infrastructure mappe la réponse
+    Then l'application reçoit un modèle cohérent avec le contrat frontend
+```
 
-3. Scenario: Show ready banner
-    Given an order in Ready for Pickup state
-    When the page renders
-    Then a full-width success banner displays "Your order is ready!"
+file `docs/features/order-status/ui_order-status-issue.md`
+```markdown
+# Suivre une commande : impact package ui
 
-4. Scenario: Auto-refresh the order state
-    Given the Order Status page is open
-    When 30 seconds elapse
-    Then the order status is refreshed automatically
+**Contexte**
+Le package ui rend l'écran de suivi de commande, y compris le bandeau prêt, le
+compte à rebours et les états de chargement visibles par le festivalier.
+
+**Critères d'acceptation**
+Feature: Order status UI
+
+1. Scenario: Afficher le compte à rebours d'une commande acknowledged
+    Given une commande acknowledged avec 6 minutes restantes
+    When l'écran de suivi est rendu
+    Then un compte à rebours visible est affiché
+
+2. Scenario: Afficher un bandeau plein écran pour une commande prête
+    Given une commande dans l'état Ready for Pickup
+    When l'écran de suivi est rendu
+    Then un bandeau de succès visible annonce que la commande est prête
 ```
 
 ## Positive Example 3: ambiguous request, clarify instead of guessing
@@ -212,7 +208,7 @@ Create one file `docs/features/cart-and-token-balance-and-menu-and-order-status.
 
 Why this is incorrect:
 - It collapses unrelated concerns into one oversized issue.
-- It does not respect the distinction between a feature slice and a shared UI component.
+- It does not respect the repository split by frontend package.
 - It makes implementation and testing harder because there is no clear ownership boundary.
 
 ## Negative Example 2: inventing scope that was not requested
@@ -245,3 +241,41 @@ Why this is incorrect:
 - The criteria are not testable.
 - Important states are missing, especially zero balances and responsive rendering.
 - The wording is too vague to drive implementation or automated tests.
+
+## Negative Example 4: wrong file prefix and wrong package mapping
+
+Input: "As a festival goer, I want to track my current order on its own page"
+
+Incorrect Output:
+```markdown
+file `docs/features/order-status/page_order-status-issue.md`
+
+# Order Status Page : Page impact
+```
+
+Why this is incorrect:
+- Frontend issue files in this repository use package prefixes such as `ui_`, not `page_`.
+- A routed screen is still documented through impacted packages, especially `application_` and `ui_`.
+- The title format must stay `# {Feature Title} : impact package {layer}`.
+
+## Negative Example 5: wrong language and wrong section headers
+
+Input: "As a developer, I want a reusable Token Balance component"
+
+Incorrect Output:
+```markdown
+file `docs/features/token-balance/ui_token-balance-issue.md`
+
+# Token Balance : impact package ui
+
+**Context**
+Reusable token balance component.
+
+**Acceptance Criteria**
+Feature: Token balance
+```
+
+Why this is incorrect:
+- Frontend issue files are written in French in this repository.
+- The required section headers are `**Contexte**` and `**Critères d'acceptation**`.
+- The issue content is too vague to guide implementation or tests.

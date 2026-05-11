@@ -1,7 +1,10 @@
 # Examples
 
 Use these examples to infer the expected split across domain, application, and
-infrastructure, and to learn when clarification is mandatory.
+infrastructure, the required file naming, and when clarification is mandatory.
+
+Application examples below describe use-case orchestration and repository side
+effects. HTTP endpoints and controller contracts belong to infrastructure.
 
 ## Positive Example 1: simple request, one file per layer
 
@@ -55,22 +58,24 @@ the use case, delegates to the domain, and persists the resulting order via the 
 **Acceptance Criteria**
 Feature: Place a drink order
 
-1. Scenario: Successfully place an order via the API
+1. Scenario: Persist a valid drink order
     Given an authenticated festival goer with 3 drink tokens
-    When calling POST /orders with body { "items": [{ "drinkId": "lemonade", "type": "non-alcoholic" }] }
-    Then the controller returns 201 Created with the new order id and status "pending"
-    And the festival goer's token balance is updated in the response
+    When the place drink order use case is executed with 1 normal alcoholic drink
+    Then the use case returns a pending order result with a total cost of 1 drink token
+    And the remaining drink token balance in the result is 2
+    And the order repository is called to save the created order
+    And the festival goer repository is called to save the updated balance
 
-2. Scenario: Insufficient tokens
+2. Scenario: Surface insufficient token errors
     Given an authenticated festival goer with 0 drink tokens
-    When calling POST /orders with body { "items": [{ "drinkId": "beer", "type": "normal-alcoholic" }] }
-    Then the controller returns 422 Unprocessable Entity
-    And the response body contains { "error": "InsufficientTokens" }
+    When the place drink order use case is executed with 1 normal alcoholic drink
+    Then the use case fails with an InsufficientTokensError
+    And no order is persisted
 
-3. Scenario: Festival goer not found
-    Given a request with an unknown festival goer id
-    When calling POST /orders
-    Then the controller returns 404 Not Found
+3. Scenario: Reject the command when the festival goer is unknown
+    Given a place drink order command for an unknown festival goer id
+    When the use case is executed
+    Then it fails with a FestivalGoerNotFoundError
 ```
 
 file `docs/features/place-drink-order/infrastructure_place-drink-order-issue.md`
@@ -149,21 +154,22 @@ Feature: Create a group order
 
 1. Scenario: Create a group order from multiple contributors
     Given two known festival goers and a valid pooled payload
-    When calling POST /group-orders
-    Then the response returns 201 Created
-    And the created order contains the contributor breakdown
+    When the group order use case is executed
+    Then the use case returns a pending group order result containing the contributor breakdown
+    And the group order repository is called to save the created order
+    And each contributor balance is saved once
 
 2. Scenario: Unknown contributor
     Given one contributor id does not exist
-    When calling POST /group-orders
-    Then the response returns 404 Not Found
+    When the group order use case is executed
+    Then it fails with a FestivalGoerNotFoundError
     And no balances are modified
 
 3. Scenario: Persistence failure rolls back the operation
     Given the aggregate passes domain validation
     And the order repository save fails
     When the use case completes
-    Then the response returns an application error
+    Then it fails with an application persistence error
     And no contributor balance is persisted as deducted
 ```
 
@@ -250,3 +256,19 @@ Why this is incorrect:
 - The input is too ambiguous to know whether the user means daily festival reset, transfer rollback, or another workflow.
 - It invents extra features that are not present in the request.
 - A clarification step is required before writing issue files.
+
+## Negative Example 4: bad naming and wrong layer wording
+
+Input: "As a festival goer, I want to place an order for a drink"
+
+Incorrect Output:
+```markdown
+file `docs/features/place-drink-order/placeDrinkOrder.md`
+
+# place drink order
+```
+
+Why this is incorrect:
+- File names must follow `{layer}_{feature-slug}-issue.md`.
+- Titles must follow `# {Feature Title} : {Layer} Layer impact`.
+- Loose naming makes the target layer ambiguous and breaks repository conventions.

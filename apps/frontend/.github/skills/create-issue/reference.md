@@ -10,6 +10,11 @@ Files follow the pattern `{layer}_{feature-slug}-issue.md` and live under `docs/
 
 Example: `docs/features/place-drink-order/ui_place-drink-order-issue.md`
 
+Do not use ownership labels such as `feature_`, `page_`, or `shared_` as file prefixes.
+Those labels may help describe the user-facing concern, but frontend issue files in this
+repository still use the package prefixes `domain_`, `application_`, `infrastructure_`,
+and `ui_`.
+
 ## Layer split strategy
 
 For every feature request, produce **one file per package**:

@@ -13,6 +13,88 @@ Instructions for creating effective and maintainable prompt files that guide Git
 - Goals: predictable behaviour, clear expectations, minimal permissions, and portability across repositories.
 - Primary references: VS Code documentation on prompt files and organization-specific conventions.
 
+## Repository-Specific Prompt Requirements
+
+These rules are mandatory for prompts authored in the Belair's Buvette API repository.
+
+### Required References
+
+- Explicitly reference `AGENTS.MD` when the prompt must follow repository architecture, naming, or workflow conventions.
+- Explicitly reference `docs/testing-guidelines.md` when the prompt creates, reviews, or debugs tests.
+- Explicitly reference the relevant feature issue file under `docs/features/<feature-name>/` when the prompt derives tests or code from Gherkin scenarios.
+
+### Explicit Layer Routing
+
+Prompts that ask Copilot to write or review code or tests MUST state how to choose the target layer.
+
+| Target layer | Use this layer when... | Expected file area | Good example | Bad example |
+| ------------ | ---------------------- | ------------------ | ------------ | ----------- |
+| `domain` | the behavior is a pure business rule, entity, value object, aggregate, or domain error | `domain/src/`, `domain/test/` | `domain/test/order.test.ts` for token-cost calculation rules | `application/test/place-drink-order.use-case.test.ts` for a pure token rule |
+| `application` | the behavior is a use case orchestrating repositories, domain objects, and returned application results | `application/src/`, `application/test/` | `application/test/place-drink-order.use-case.test.ts` for a use-case result and persistence side effects | `domain/test/place-drink-order.use-case.test.ts` for repository orchestration |
+| `infrastructure` | the behavior is an adapter, persistence detail, controller, transport contract, or external integration | `infrastructure/src/`, `infrastructure/test/` | `infrastructure/test/in-memory-order-repository.test.ts` for repository adapter behavior | `application/test/in-memory-order-repository.test.ts` for storage concerns |
+
+- If the prompt cannot determine the layer from the request, instruct Copilot to stop and ask a clarifying question before generating code.
+
+### Gherkin Fidelity Rules
+
+- When a prompt asks Copilot to derive a test from a Gherkin scenario, instruct it to mirror the scenario exactly before simplifying anything.
+- Reuse the same business data as the scenario unless the user explicitly asks for a variant.
+- Assert every observable outcome named in the scenario result, not just a subset.
+
+Good example:
+
+```markdown
+Use the application scenario exactly as written in `docs/features/place-drink-order/application_place-drink-order-issue.md`.
+If the scenario says 1 non-alcoholic drink, 1 normal alcoholic drink, and 1 premium alcoholic drink, the test must use those three items and assert the pending status, total drink token cost, remaining balance, and persistence side effects.
+```
+
+Bad example:
+
+```markdown
+Write a similar happy-path test for placing one Mojito.
+```
+
+### Naming Rules With Negative Examples
+
+- Prompts must specify the expected file naming pattern for the target layer.
+- Prompts must specify that test names should stay as close as possible to the source Gherkin wording when the test is derived from acceptance criteria.
+
+Good examples:
+
+```markdown
+Create `application/test/place-drink-order.use-case.test.ts`.
+Name the test with the Given/When/Then wording from the selected scenario.
+```
+
+Bad examples:
+
+```markdown
+Create `application/test/test1.ts`.
+Name the test `places order successfully`.
+```
+
+```markdown
+Create `domain/test/place-drink-order.test.ts` for a use-case orchestration scenario.
+```
+
+### CRITICAL - Red Phase Restrictions
+
+- If the prompt is for the RED phase of TDD, it MUST explicitly forbid any production code creation or modification.
+- The prompt must say that only failing tests, test doubles, and test-only fixtures may be added or changed in RED.
+- The prompt must instruct Copilot to stop after the failing test is written and validated as failing.
+
+Required wording pattern:
+
+```markdown
+CRITICAL: RED phase only. Do not create or modify production code under `src/`, do not add exports, do not update barrel files, and do not change application wiring. Only write or adjust the failing test and any test-only doubles required for that test.
+```
+
+Explicit negative example:
+
+```markdown
+Do not add `export class PlaceDrinkOrderUseCase` to `application/src/index.ts` during the RED phase just to make the test compile or pass.
+```
+
 ## Frontmatter Requirements
 
 Every prompt file should include YAML frontmatter with the following fields:
