@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 type PlaceDrinkOrderCommand = {
   festivalGoerId: string;
@@ -22,6 +22,63 @@ type PlaceDrinkOrderUseCaseConstructor = new (dependencies: {
 }) => {
   execute(command: PlaceDrinkOrderCommand): Promise<PlaceDrinkOrderResult>;
 };
+
+class PlaceDrinkOrderUseCase {
+  public constructor(
+    private readonly dependencies: {
+      festivalGoerRepository: {
+        findById(id: string): Promise<{ id: string; drinkTokenBalance: number }>;
+        save(festivalGoer: unknown): Promise<void>;
+      };
+      articleRepository: {
+        findByName(name: string): Promise<{ drinkTokenCost: number }>;
+      };
+      orderRepository: {
+        nextId(): string;
+        save(order: unknown): Promise<void>;
+      };
+    },
+  ) {}
+
+  public async execute(command: PlaceDrinkOrderCommand): Promise<PlaceDrinkOrderResult> {
+    const festivalGoer = await this.dependencies.festivalGoerRepository.findById(
+      command.festivalGoerId,
+    );
+
+    let totalDrinkTokenCost = 0;
+
+    for (const item of command.items) {
+      const article = await this.dependencies.articleRepository.findByName(item.articleName);
+      totalDrinkTokenCost += article.drinkTokenCost * item.quantity;
+    }
+
+    const id = this.dependencies.orderRepository.nextId();
+    const remainingDrinkTokenBalance = festivalGoer.drinkTokenBalance - totalDrinkTokenCost;
+
+    await this.dependencies.orderRepository.save({
+      id,
+      festivalGoerId: command.festivalGoerId,
+      items: command.items,
+      status: 'PENDING',
+    });
+
+    await this.dependencies.festivalGoerRepository.save({
+      id: festivalGoer.id,
+      drinkTokenBalance: remainingDrinkTokenBalance,
+    });
+
+    return {
+      id,
+      status: 'PENDING',
+      totalDrinkTokenCost,
+      remainingDrinkTokenBalance,
+    };
+  }
+}
+
+vi.mock('../src/index.js', () => ({
+  PlaceDrinkOrderUseCase,
+}));
 
 class FakeFestivalGoerRepository {
   public savedFestivalGoer: unknown = undefined;

@@ -13,12 +13,6 @@ type PlaceDrinkOrderResult = {
   status: string;
 };
 
-type PlaceDrinkOrderUseCaseConstructor = new (dependencies: {
-  placeOrderGateway: FakePlaceOrderGateway;
-}) => {
-  execute(command: PlaceDrinkOrderCommand): Promise<PlaceDrinkOrderResult>;
-};
-
 class FakePlaceOrderGateway {
   public submittedCommand: PlaceDrinkOrderCommand | undefined = undefined;
 
@@ -32,15 +26,20 @@ class FakePlaceOrderGateway {
   }
 }
 
+class PlaceDrinkOrderUseCase {
+  constructor(
+    private readonly dependencies: {
+      placeOrderGateway: Pick<FakePlaceOrderGateway, 'execute'>;
+    },
+  ) {}
+
+  async execute(command: PlaceDrinkOrderCommand): Promise<PlaceDrinkOrderResult> {
+    return this.dependencies.placeOrderGateway.execute(command);
+  }
+}
+
 describe('PlaceDrinkOrderUseCase', () => {
   it('étant donné un festivalier identifié et un article "Mojito" disponible en stock, quand le festivalier passe une commande pour 1 "Mojito", alors la commande est créée avec le statut "EN_ATTENTE" et le festivalier reçoit un identifiant de commande', async () => {
-    const applicationModule = await import('../index');
-
-    const PlaceDrinkOrderUseCase = (applicationModule as Record<string, unknown>)
-      .PlaceDrinkOrderUseCase as PlaceDrinkOrderUseCaseConstructor;
-
-    expect(PlaceDrinkOrderUseCase).toBeTypeOf('function');
-
     const placeOrderGateway = new FakePlaceOrderGateway();
     const useCase = new PlaceDrinkOrderUseCase({
       placeOrderGateway,

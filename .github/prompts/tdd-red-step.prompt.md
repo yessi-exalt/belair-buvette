@@ -83,10 +83,14 @@ Bad naming examples:
 - Do not add exports, do not update barrel files, do not edit `src/index.ts`, do not change app wiring, and do not create production helpers just to satisfy the test.
 - The test must fail for a real reason in the current codebase, not because of a syntax error you introduced deliberately.
 
-Explicit negative example:
+Explicit negative examples:
 
 ```markdown
 Do not add `export class PlaceDrinkOrderUseCase` to `apps/api/application/src/index.ts` during the RED phase just to make the test compile or pass.
+```
+
+```markdown
+Do not use `await import('../src/index.js')` or `await import('../index')` to check that a class is exported. Write the test as if the class is already defined — the test fails because the class does not exist yet locally.
 ```
 
 ## Test-writing rules
@@ -97,6 +101,7 @@ Do not add `export class PlaceDrinkOrderUseCase` to `apps/api/application/src/in
 - Follow Arrange / Act / Assert.
 - Keep one selected scenario per test file update.
 - When a Gherkin scenario contains multiple `And` outcomes, keep them together in the same test because they belong to the same scenario.
+- Do not use `await import('../index')` or `await import('../src/index.js')`. Reference the target class or function directly in the test body — the test must fail because the class is not yet defined locally, not because a production export is missing.
 
 ## Run commands
 
