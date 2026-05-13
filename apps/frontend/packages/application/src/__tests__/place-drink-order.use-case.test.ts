@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-type PlaceDrinkOrderCommand = {
-  festivalGoerId: string;
-  items: Array<{
-    articleName: string;
-    quantity: number;
-  }>;
-};
-
-type PlaceDrinkOrderResult = {
-  orderId: string;
-  status: string;
-};
+import { PlaceDrinkOrderUseCase } from '../index.js';
+import type {
+  PlaceDrinkOrderCommand,
+  PlaceDrinkOrderResult,
+} from '../use-cases/place-drink-order.use-case.js';
 
 class FakePlaceOrderGateway {
   public submittedCommand: PlaceDrinkOrderCommand | undefined = undefined;
@@ -23,18 +16,6 @@ class FakePlaceOrderGateway {
       orderId: 'order-123',
       status: 'EN_ATTENTE',
     };
-  }
-}
-
-class PlaceDrinkOrderUseCase {
-  constructor(
-    private readonly dependencies: {
-      placeOrderGateway: Pick<FakePlaceOrderGateway, 'execute'>;
-    },
-  ) {}
-
-  async execute(command: PlaceDrinkOrderCommand): Promise<PlaceDrinkOrderResult> {
-    return this.dependencies.placeOrderGateway.execute(command);
   }
 }
 

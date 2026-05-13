@@ -44,12 +44,17 @@ apps/api/application/test/place-drink-order.use-case.test.ts :: étant donné un
 apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts :: étant donné un festivalier identifié et un article "Mojito" disponible en stock, quand le festivalier passe une commande pour 1 "Mojito", alors la commande est créée avec le statut "EN_ATTENTE" et le festivalier reçoit un identifiant de commande
 ```
 
+Frontend path compatibility:
+
+- Accept both `apps/frontend/packages/*/src/__tests__/...` and legacy `apps/frontend/packages/*/src/tests/...` inputs.
+- If the provided frontend path uses `src/tests/` but the existing file in the workspace is under `src/__tests__/`, resolve to the existing file and use that canonical path in the JSON output.
+
 If either the file path or the exact test name is missing, ask for clarification and stop.
 
 ## Workflow
 
-1. Parse the input and load the target test file.
-2. Determine the owning app and scope from the test file path.
+1. Parse the input, normalize any legacy frontend `src/tests/` path to the actual existing workspace path when unambiguous, and load the target test file.
+2. Determine the owning app and scope from the normalized test file path.
 3. Inspect only the minimum nearby context needed to understand why that single test currently fails.
 4. Implement the minimum code necessary to make that one test pass.
 5. Run only the targeted test from the owning package and confirm it passes.
@@ -72,13 +77,15 @@ Infer the scope from the test file path, not from a broader feature description.
 
 | Test path prefix | Scope |
 | ---------------- | ----- |
-| `apps/frontend/packages/domain/src/__tests__/` | `packages/domain` |
-| `apps/frontend/packages/application/src/__tests__/` | `packages/application` |
-| `apps/frontend/packages/infrastructure/src/__tests__/` | `packages/infrastructure` |
-| `apps/frontend/packages/ui/src/` with `*.test.tsx` or `__tests__/` | `packages/ui` |
+| `apps/frontend/packages/domain/src/__tests__/` or `apps/frontend/packages/domain/src/tests/` | `packages/domain` |
+| `apps/frontend/packages/application/src/__tests__/` or `apps/frontend/packages/application/src/tests/` | `packages/application` |
+| `apps/frontend/packages/infrastructure/src/__tests__/` or `apps/frontend/packages/infrastructure/src/tests/` | `packages/infrastructure` |
+| `apps/frontend/packages/ui/src/` with `*.test.tsx`, `__tests__/`, or `tests/` | `packages/ui` |
 | `apps/frontend/tests/e2e/` | `e2e` |
 
 If the file path does not clearly map to one row, ask for clarification and stop.
+
+When both a legacy `src/tests/` path and a canonical `src/__tests__/` path could match, prefer the path that actually exists in the workspace and emit that path in the final JSON.
 
 ## CRITICAL - GREEN phase restrictions
 
@@ -263,6 +270,7 @@ Before returning the JSON result, verify all of the following:
 - the selected test body was not edited,
 - no production file under `src/` was created or modified,
 - exactly one targeted test was run,
+- the returned payload is valid JSON and every inner double quote inside string values is escaped,
 - that targeted test passes.
 
 If one of these checks fails, keep working or return `blocked` / `failed` with the reason in `notes`.
@@ -276,6 +284,8 @@ If one of these checks fails, keep working or return `blocked` / `failed` with t
 ## Output format
 
 Return JSON only. Do not wrap it in Markdown. Do not add commentary before or after the JSON.
+
+The returned payload must be parseable JSON. Escape every inner `"` that appears inside a JSON string value, especially in `testName` and `validationCommand`.
 
 Use this schema:
 
@@ -350,6 +360,7 @@ Expected outcome:
 - update only `apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts`
 - add the smallest test-local implementation needed inside that file
 - run only the targeted test and confirm it passes
+- if the input used the legacy `src/tests/` form, normalize the output to the canonical existing workspace path
 - return JSON only
 
 Example JSON output:
