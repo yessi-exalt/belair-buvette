@@ -1,1 +1,1 @@
-// Export your infrastructure adapters here
+export { createPostCommandesHttpHandler } from './create-post-commandes-http-handler.js';
