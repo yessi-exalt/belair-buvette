@@ -10,7 +10,6 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@belair-buvette-api/domain": "workspace:*",
-    "@belair-buvette-api/infrastructure": "workspace:*"
+    "@belair-buvette-api/domain": "workspace:*"
   }
 }

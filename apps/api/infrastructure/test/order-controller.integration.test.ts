@@ -1,148 +1,99 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPostCommandesHttpHandler } from '../src/index.js';
+import { OrderController } from '../src/controllers/order-controller.js';
 
-class FakeFestivalGoerRepository {
-  public async findById(id: string): Promise<{ id: string }> {
-    return { id };
-  }
-}
-
-class FakeArticleRepository {
-  public async findAvailableById(id: string): Promise<{
-    id: string;
-    article: string;
-    quantiteDisponible: number;
-  }> {
-    const articles = {
-      mojito: {
-        id: 'mojito',
-        article: 'Mojito',
-        quantiteDisponible: 10,
-      },
-      'eau-plate': {
-        id: 'eau-plate',
-        article: 'Eau plate',
-        quantiteDisponible: 50,
-      },
-    } as const;
-
-    const article = articles[id as keyof typeof articles];
-
-    if (!article) {
-      throw new Error(`Unknown article in test double: ${id}`);
-    }
-
-    return article;
-  }
-}
-
-class FakeOrderRepository {
-  public savedOrder:
+class FakeCreateOrderUseCase {
+  public receivedCommand:
     | {
-        id: string;
-        festivalierId: string;
-        articles: Array<{ id: string; quantite: number }>;
-        statut: string;
+        festivalGoerId: string;
+        articles: Array<{ id: string; quantity: number }>;
       }
     | undefined;
 
-  public nextId(): string {
-    return 'commande-123';
-  }
+  public executeCalls = 0;
 
-  public async save(order: {
-    id: string;
-    festivalierId: string;
-    articles: Array<{ id: string; quantite: number }>;
-    statut: string;
-  }): Promise<void> {
-    this.savedOrder = order;
+  public async execute(command: {
+    festivalGoerId: string;
+    articles: Array<{ id: string; quantity: number }>;
+  }): Promise<{ orderId: string }> {
+    this.receivedCommand = command;
+    this.executeCalls += 1;
+
+    return { orderId: 'order-123' };
   }
 }
 
 describe('OrderController', () => {
-  it('Scenario: Commande créée avec succès', async () => {
-    const festivalGoerRepository = new FakeFestivalGoerRepository();
-    const articleRepository = new FakeArticleRepository();
-    const orderRepository = new FakeOrderRepository();
-    const handlePostCommandes = createPostCommandesHttpHandler({
-      festivalGoerRepository,
-      articleRepository,
-      orderRepository,
+  it('creates an order successfully by delegating to the use case', async () => {
+    const createOrderUseCase = new FakeCreateOrderUseCase();
+    const controller = new OrderController({
+      createOrderUseCase,
     });
 
-    const request = new Request('http://belair.test/commandes', {
+    const request = new Request('http://belair.test/orders', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        festivalierId: 'festivalier-42',
-        articles: [{ id: 'mojito', quantite: 2 }],
+        festivalGoerId: 'festival-goer-42',
+        articles: [{ id: 'mojito', quantity: 2 }],
       }),
     });
 
-    const response = await handlePostCommandes(request);
-    const body = (await response.json()) as { commandeId: string };
+    const response = await controller.createOrder(request);
+    const body = (await response.json()) as { orderId: string };
 
     expect(response.status).toBe(201);
-    expect(body.commandeId).not.toBe('');
-    expect(orderRepository.savedOrder).toEqual({
-      id: body.commandeId,
-      festivalierId: 'festivalier-42',
-      articles: [{ id: 'mojito', quantite: 2 }],
-      statut: 'EN_ATTENTE',
+    expect(body.orderId).not.toBe('');
+    expect(createOrderUseCase.executeCalls).toBe(1);
+    expect(createOrderUseCase.receivedCommand).toEqual({
+      festivalGoerId: 'festival-goer-42',
+      articles: [{ id: 'mojito', quantity: 2 }],
     });
   });
 
-  it("Scenario: Requête refusée si le festivalier n'est pas authentifié", async () => {
-    const festivalGoerRepository = new FakeFestivalGoerRepository();
-    const articleRepository = new FakeArticleRepository();
-    const orderRepository = new FakeOrderRepository();
-    const handlePostCommandes = createPostCommandesHttpHandler({
-      festivalGoerRepository,
-      articleRepository,
-      orderRepository,
+  it('rejects the request when the festival goer is not authenticated', async () => {
+    const createOrderUseCase = new FakeCreateOrderUseCase();
+    const controller = new OrderController({
+      createOrderUseCase,
     });
 
-    const request = new Request('http://belair.test/commandes', {
+    const request = new Request('http://belair.test/orders', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        articles: [{ id: 'mojito', quantite: 2 }],
+        articles: [{ id: 'mojito', quantity: 2 }],
       }),
     });
 
-    const response = await handlePostCommandes(request);
+    const response = await controller.createOrder(request);
 
     expect(response.status).toBe(401);
+    expect(createOrderUseCase.executeCalls).toBe(0);
   });
 
-  it('Scenario: Requête refusée si le corps de la requête est invalide', async () => {
-    const festivalGoerRepository = new FakeFestivalGoerRepository();
-    const articleRepository = new FakeArticleRepository();
-    const orderRepository = new FakeOrderRepository();
-    const handlePostCommandes = createPostCommandesHttpHandler({
-      festivalGoerRepository,
-      articleRepository,
-      orderRepository,
+  it('rejects the request when the body is invalid', async () => {
+    const createOrderUseCase = new FakeCreateOrderUseCase();
+    const controller = new OrderController({
+      createOrderUseCase,
     });
 
-    const request = new Request('http://belair.test/commandes', {
+    const request = new Request('http://belair.test/orders', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        festivalierId: 'festivalier-42',
+        festivalGoerId: 'festival-goer-42',
       }),
     });
 
-    const response = await handlePostCommandes(request);
+    const response = await controller.createOrder(request);
 
     expect(response.status).toBe(400);
+    expect(createOrderUseCase.executeCalls).toBe(0);
   });
 });
