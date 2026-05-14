@@ -16,6 +16,17 @@ Refactor the code produced during the GREEN step in the Belair's Buvette monorep
 Move production logic out of the test file into the appropriate production classes or modules, improve clarity and maintainability, and keep behavior unchanged.
 Stop only after the selected validations pass and return JSON only.
 
+### Infrastructure scope — expected production shape
+
+When `scope` is `infrastructure` and the test exercises an HTTP handler, the expected output of the REFACTOR phase is:
+
+1. **A controller class** (e.g. `CommandesController`) in `infrastructure/src/controllers/` that holds the handler method.
+2. **Separate request and response DTOs** (e.g. `CreerCommandeRequest`, `CreerCommandeResponse`) in `infrastructure/src/dtos/`, decoupled from any domain entity.
+3. **Use-case delegation**: the controller constructs or receives the use case and delegates to it — it contains zero business logic of its own.
+4. **Removal of the inline factory function** (`createPostCommandesHttpHandler`) once the controller class covers the same behavior.
+
+Create each piece in a separate micro-step and validate after each one. Do not bundle class + DTOs + wiring into a single edit.
+
 ## Mandatory references
 
 - For API work, load `apps/api/AGENTS.MD` and `apps/api/docs/testing-guidelines.md`.
@@ -137,6 +148,9 @@ When a frontend `testFilePath` uses legacy `src/tests/` but the actual workspace
 - Never move multiple classes/functions/responsibilities in a single modification.
 - Never touch both a production file and a test file in the same micro-step.
 - If architecture ownership is unclear for the target code, stop and ask for clarification instead of guessing a layer.
+- **HARD STOP — Controller layer only.** Do not add business validation (stock checks, balance checks, domain rule enforcement) inside the controller or its DTOs. That logic belongs to the domain or application layers. If a green test does not explicitly assert that behavior, do not add it.
+- **HARD STOP — One class per micro-step.** Never create the controller class and its DTOs in the same edit. Controller first, validate, then each DTO separately, validate after each.
+- **HARD STOP — DTOs must be domain-agnostic.** If a DTO imports or extends a domain entity or value object, reject the edit and create a plain TypeScript type or class instead.
 
 ## Negative examples
 
@@ -200,6 +214,42 @@ class PlaceDrinkOrderUseCase {
 
 Keep the externally observed contract stable unless the tests are updated in a separate RED cycle.
 
+### ❌ Putting business validation inside the controller
+
+```typescript
+// WRONG — stock validation is domain logic, not HTTP layer responsibility
+class CommandesController {
+  async creerCommande(request: CreerCommandeRequest): Promise<Response> {
+    const article = await this.articleRepository.findAvailableById(request.articleId);
+    if (article.quantiteDisponible < request.quantite) {
+      return new Response(null, { status: 422 }); // ❌ domain rule in controller
+    }
+    // ...
+  }
+}
+```
+
+The controller's only responsibilities are: parse the HTTP request into a DTO, call the use case, map the result to an HTTP response. Business rules stay in the domain and application layers.
+
+### ❌ DTOs coupled to domain entities
+
+```typescript
+// WRONG — DTO imports a domain entity
+import { Order } from '../../domain/src/index.js';
+
+class CreerCommandeResponse extends Order { /* ... */ }
+```
+
+DTOs are plain TypeScript types or classes. They must not import from `domain` or `application`.
+
+### ❌ Creating controller + DTOs + wiring in one edit
+
+```text
+Created CommandesController, CreerCommandeRequest, CreerCommandeResponse, and wired the use case — all in a single file edit.
+```
+
+Each class or type is a separate micro-step with its own focused test run.
+
 ## Refactoring rules
 
 - Prefer existing production classes and modules over creating new abstractions.
@@ -229,6 +279,16 @@ Before returning the JSON result, verify all of the following:
 - all required array fields are present and are arrays (even when empty),
 - the response body is raw JSON only (no Markdown fences, no preface, no trailing commentary),
 - the final state is green for the touched slice.
+
+### Additional self-check for infrastructure HTTP controller refactors
+
+If `scope` is `infrastructure` and an HTTP handler was involved, also verify:
+
+- a controller class (not just a factory function) is the final production artifact,
+- request and response DTOs exist as separate files and do not import from `domain` or `application`,
+- the controller delegates to a use case and contains no business logic (no stock checks, no balance checks, no domain rule enforcement),
+- no inline business validation was added that is not already covered by a passing green test,
+- the controller is in the correct sub-directory (`controllers/`) and the DTOs are in their own sub-directory (`dtos/`) per the repository conventions.
 
 If one of these checks fails, keep working or return `blocked` / `failed` with the reason in `notes`.
 

@@ -14,12 +14,12 @@ def validate_issue_format(content: str) -> tuple[bool, list[str]]:
     if not re.search(r"(?m)^#\s+.+", content):
         errors.append("Title is missing or malformed. Expect a top-level markdown title starting with '# '.")
 
-    if not re.search(r"\*\*(Context|Contexte)\*\*\s*\n\s*\S.+", content):
+    if not re.search(r"\*\*Context\*\*\s*\n\s*\S.+", content):
         errors.append(
             "Context section is missing or malformed. Expect a '**Context**' section with at least one non-empty line.",
         )
 
-    if not re.search(r"\*\*(Acceptance Criteria|Critères d'acceptation|Acceptance)\*\*", content):
+    if not re.search(r"\*\*Acceptance Criteria\*\*", content):
         errors.append("Acceptance Criteria section is missing or malformed. Expect '**Acceptance Criteria**' header.")
 
     if not re.search(r"(?m)^\s*Feature:.*$", content):

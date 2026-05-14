@@ -56,3 +56,4 @@ Include at least one negative/failure scenario per file.
 
 All issue files in this repository are written in **English**.
 Use `**Context**` and `**Acceptance Criteria**` as section headers.
+All generated identifiers and names must be in English, including file names, titles, feature slugs, functions, methods, classes, variables, and DTO names.

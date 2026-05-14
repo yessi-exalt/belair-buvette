@@ -22,6 +22,8 @@ Follow these rules to keep the codebase consistent, readable, and maintainable.
 - **Functions / Methods:** camelCase → `placeOrder()`, `calculatePreparationTime()`
 - **Constants:** UPPER_SNAKE_CASE → `MAX_TOKENS_PER_TRANSFER`, `PREPARATION_TIME_PER_DRINK`
 - **Enums:** PascalCase for the enum, UPPER_SNAKE_CASE for members → `OrderStatus.PENDING`
+- **All identifiers must be English:** file names, class names, type names, variables, functions, methods, DTOs, and generated examples must use English words only.
+- Do not introduce French identifiers such as `commande`, `festivalier`, `creer`, or `suivre`; prefer `order`, `festivalGoer`, `create`, and `track`.
 
 ## Architecture — Hexagonal / Clean Architecture
 

@@ -21,6 +21,8 @@ Follow these rules to keep the codebase consistent, readable, and maintainable.
 - **Hooks:** camelCase with `use` prefix → `useContactExport()`, `useOrderList()`
 - **Types / Interfaces:** PascalCase → `Contact`, `ExportOptions`
 - **Constants:** UPPER_SNAKE_CASE → `MAX_EXPORT_ROWS`
+- **All identifiers must be English:** file names, component names, hooks, types, props, variables, functions, methods, test names, and generated examples must use English words only.
+- Do not introduce French identifiers such as `commande`, `festivalier`, `creer`, or `suivre`; prefer `order`, `festivalGoer`, `create`, and `track`.
 
 ## Component Design
 

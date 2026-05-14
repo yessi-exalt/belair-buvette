@@ -2,7 +2,7 @@
 
 ## Output format
 
-Each issue is a standalone Markdown file with: `# Title`, `**Contexte**`, `**Critères d'acceptation**` (Gherkin), `**Notes**` (optional).
+Each issue is a standalone Markdown file with: `# Title`, `**Context**`, `**Acceptance Criteria**` (Gherkin), `**Notes**` (optional).
 
 ## File naming convention
 
@@ -33,10 +33,10 @@ If the request does not impact a given package, omit that file. If the request i
 `# {Feature Title} : impact package {layer}`
 
 Examples:
-- `# Commander une boisson : impact package domain`
-- `# Commander une boisson : impact package application`
-- `# Commander une boisson : impact package infrastructure`
-- `# Commander une boisson : impact package ui`
+- `# Place a Drink Order : impact package domain`
+- `# Place a Drink Order : impact package application`
+- `# Place a Drink Order : impact package infrastructure`
+- `# Place a Drink Order : impact package ui`
 
 ## Gherkin structure
 
@@ -61,5 +61,6 @@ Include at least one negative/failure scenario per file.
 
 ## Language policy
 
-All issue files in this repository are written in **French**.
-Use `**Contexte**` and `**Critères d'acceptation**` as section headers.
+All issue files in this repository are written in **English**.
+Use `**Context**` and `**Acceptance Criteria**` as section headers.
+All generated identifiers and names must be in English, including file names, titles, feature slugs, functions, methods, classes, variables, and DTO names.
