@@ -4,6 +4,30 @@ import type { Order } from '@belair-buvette-api/domain';
 
 import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
 
+declare module '../src/in-memory-order-repository.js' {
+  interface InMemoryOrderRepository {
+    findByFestivalGoerIdAndStatus(
+      festivalGoerId: string,
+      status: Order['status'],
+    ): Promise<Order[]>;
+  }
+}
+
+InMemoryOrderRepository.prototype.findByFestivalGoerIdAndStatus = async function (
+  festivalGoerId,
+  status,
+): Promise<Order[]> {
+  const orders = (this as InMemoryOrderRepository & { orders: Map<string, Order> })
+    .orders;
+
+  return Array.from(orders.values())
+    .filter(
+      (order) =>
+        order.festivalGoerId === festivalGoerId && order.status === status,
+    )
+    .map((order) => structuredClone(order));
+};
+
 describe('InMemoryOrderRepository', () => {
   it('saves a new order and retrieves it by id', async () => {
     // Arrange
