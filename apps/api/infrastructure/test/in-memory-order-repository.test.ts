@@ -33,4 +33,28 @@ describe('InMemoryOrderRepository', () => {
       ],
     });
   });
+
+  it('updates a saved order status to PRÊTE and retrieves it by id', async () => {
+    // Arrange
+    const repository = new InMemoryOrderRepository();
+    const pendingOrder: Order = {
+      id: 'order-1',
+      festivalGoerId: 'festival-goer-42',
+      status: 'EN_ATTENTE',
+      items: [{ articleName: 'Mojito', quantity: 2 }],
+    };
+
+    const readyOrder: Order = {
+      ...pendingOrder,
+      status: 'PRÊTE',
+    };
+
+    // Act
+    await repository.save(pendingOrder);
+    await repository.save(readyOrder);
+    const found = await repository.findById('order-1');
+
+    // Assert
+    expect(found.status).toBe('PRÊTE');
+  });
 });
