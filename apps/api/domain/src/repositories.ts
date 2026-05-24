@@ -33,4 +33,5 @@ export interface OrderRepository {
   nextId(): string;
   save(order: Order): Promise<void>;
   findById(id: string): Promise<Order>;
+  findByFestivalGoerIdAndStatus(festivalGoerId: string, status: Order['status']): Promise<Order[]>;
 }
