@@ -99,9 +99,11 @@ Do not use `await import('../src/index.js')` or `await import('../index')` to ch
 - For API tests, use plain TypeScript test doubles and prefer fakes for repositories.
 - For frontend component tests, use Testing Library semantic queries and `userEvent`.
 - Follow Arrange / Act / Assert.
-- Keep one selected scenario per test file update.
+- Add exactly **one new failing `it()` block** per RED step. Do not merge multiple Gherkin scenarios into a single test.
+- If a test file already exists for the same adapter or scope (e.g., `in-memory-order-repository.test.ts`), **add the new `it()` to that file**. Do not create a separate file for every scenario.
 - When a Gherkin scenario contains multiple `And` outcomes, keep them together in the same test because they belong to the same scenario.
-- Do not use `await import('../index')` or `await import('../src/index.js')`. Reference the target class or function directly in the test body — the test must fail because the class is not yet defined locally, not because a production export is missing.
+- Do not use `await import('../index')` or `await import('../src/index.js')`. Use a **static `import` statement** pointing directly to the expected production file path (e.g., `import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js'`). The test must fail because the source file does not exist yet, producing a `Cannot find module` error at collection time.
+- **Never use `declare const ClassName` or `declare class ClassName`.** These bypass the module system entirely and produce a `ReferenceError: ClassName is not defined` at runtime. That is not a valid RED failure — it proves nothing about the missing implementation.
 
 ## Run commands
 
@@ -121,6 +123,44 @@ Expected outcome:
 - mirror the selected Given/When/Then data exactly
 - run only that file and confirm it fails
 - stop without touching `apps/api/application/src/`
+
+### Infrastructure RED example
+
+Input: a scenario about saving and retrieving an order in the repository adapter.
+
+Expected test code:
+
+```typescript
+import { describe, expect, it } from 'vitest';
+import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
+import type { Order } from '@belair-buvette-api/domain';
+
+describe('InMemoryOrderRepository', () => {
+  it('saves and retrieves an order by id', async () => {
+    // Arrange
+    const repository = new InMemoryOrderRepository();
+    const order: Order = { id: 'order-1', festivalGoerId: 'goer-1', status: 'EN_ATTENTE', items: [] };
+
+    // Act
+    await repository.save(order);
+    const found = await repository.findById('order-1');
+
+    // Assert
+    expect(found.id).toBe('order-1');
+  });
+});
+```
+
+Expected RED failure: `Error: Cannot find module '../src/in-memory-order-repository.js'`
+
+**Not acceptable:** `ReferenceError: InMemoryOrderRepository is not defined` — this means a `declare const` was used instead of a real import, which is always wrong.
+
+Expected outcome:
+
+- add the new `it()` block to the existing `infrastructure/test/in-memory-order-repository.test.ts` when that file already covers the same adapter
+- the test imports the adapter via a static `import` from `../src/`
+- it fails at module resolution, not at runtime
+- stop without creating `apps/api/infrastructure/src/in-memory-order-repository.ts`
 
 ### Frontend RED example
 
