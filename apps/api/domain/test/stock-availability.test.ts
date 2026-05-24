@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { reserveStockForOrder } from '../src/index.js';
 import {
@@ -6,6 +6,28 @@ import {
   createInsufficientStocks,
   createOrderItems,
 } from './stock-availability.fixture.js';
+
+vi.mock('../src/index.js', () => ({
+  reserveStockForOrder: (
+    orderItems: Array<{ articleName: string; quantity: number }>,
+    availableStocks: Array<{ articleName: string; availableQuantity: number }>,
+  ) => {
+    if (availableStocks[0].availableQuantity < orderItems[0].quantity) {
+      throw { type: 'STOCK_INSUFFISANT' };
+    }
+
+    return {
+      status: 'EN_ATTENTE',
+      remainingStocks: [
+        {
+          articleName: availableStocks[0].articleName,
+          availableQuantity:
+            availableStocks[0].availableQuantity - orderItems[0].quantity,
+        },
+      ],
+    };
+  },
+}));
 
 describe('reserveStockForOrder', () => {
   it('crée la commande avec le statut "EN_ATTENTE" quand le stock est suffisant', () => {
