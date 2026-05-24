@@ -1,6 +1,26 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Order } from '@belair-buvette-api/domain';
+
+const { TestInMemoryOrderRepository } = vi.hoisted(() => {
+  class TestInMemoryOrderRepository {
+    private readonly orders = new Map<string, Order>();
+
+    async save(order: Order): Promise<void> {
+      this.orders.set(order.id, order);
+    }
+
+    async findById(orderId: string): Promise<Order> {
+      return this.orders.get(orderId) as Order;
+    }
+  }
+
+  return { TestInMemoryOrderRepository };
+});
+
+vi.mock('../src/in-memory-order-repository.js', () => ({
+  InMemoryOrderRepository: TestInMemoryOrderRepository,
+}));
 
 import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
 
