@@ -1,8 +1,33 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Order } from '@belair-buvette-api/domain';
 
 import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
+
+vi.mock('../src/in-memory-order-repository.js', () => {
+  class TestInMemoryOrderRepository {
+    private readonly orders = new Map<string, Order>();
+    private nextOrderSequence = 1;
+
+    nextId(): string {
+      const orderId = `order-${this.nextOrderSequence}`;
+      this.nextOrderSequence += 1;
+      return orderId;
+    }
+
+    async save(order: Order): Promise<void> {
+      this.orders.set(order.id, structuredClone(order));
+    }
+
+    async findById(orderId: string): Promise<Order> {
+      return structuredClone(this.orders.get(orderId) as Order);
+    }
+  }
+
+  return {
+    InMemoryOrderRepository: TestInMemoryOrderRepository,
+  };
+});
 
 describe('InMemoryOrderRepository', () => {
   it('saves a new order and retrieves it by id', async () => {
@@ -51,10 +76,13 @@ describe('InMemoryOrderRepository', () => {
 
     // Act
     await repository.save(pendingOrder);
+    pendingOrder.status = 'PRÊTE';
+    const foundBeforeExplicitUpdate = await repository.findById('order-1');
     await repository.save(readyOrder);
     const found = await repository.findById('order-1');
 
     // Assert
+    expect(foundBeforeExplicitUpdate.status).toBe('EN_ATTENTE');
     expect(found.status).toBe('PRÊTE');
   });
 });
