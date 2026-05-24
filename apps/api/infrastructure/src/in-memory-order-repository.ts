@@ -11,10 +11,10 @@ export class InMemoryOrderRepository implements OrderRepository {
   }
 
   async save(order: Order): Promise<void> {
-    this.orders.set(order.id, order);
+    this.orders.set(order.id, structuredClone(order));
   }
 
   async findById(orderId: string): Promise<Order> {
-    return this.orders.get(orderId) as Order;
+    return structuredClone(this.orders.get(orderId) as Order);
   }
 }
