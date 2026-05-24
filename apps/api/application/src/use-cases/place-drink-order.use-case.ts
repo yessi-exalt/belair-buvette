@@ -1,3 +1,9 @@
+import type {
+  ArticleRepository,
+  FestivalGoerRepository,
+  OrderRepository,
+} from '@belair-buvette-api/domain';
+
 type PlaceDrinkOrderCommand = {
   festivalGoerId: string;
   items: Array<{
@@ -14,17 +20,9 @@ type PlaceDrinkOrderResult = {
 };
 
 type PlaceDrinkOrderDependencies = {
-  festivalGoerRepository: {
-    findById(id: string): Promise<{ id: string; drinkTokenBalance: number }>;
-    save(festivalGoer: unknown): Promise<void>;
-  };
-  articleRepository: {
-    findByName(name: string): Promise<{ drinkTokenCost: number }>;
-  };
-  orderRepository: {
-    nextId(): string;
-    save(order: unknown): Promise<void>;
-  };
+  festivalGoerRepository: FestivalGoerRepository;
+  articleRepository: ArticleRepository;
+  orderRepository: OrderRepository;
 };
 
 export class PlaceDrinkOrderUseCase {
@@ -40,6 +38,11 @@ export class PlaceDrinkOrderUseCase {
     for (const item of command.items) {
       const article = await this.dependencies.articleRepository.findByName(item.articleName);
       totalDrinkTokenCost += article.drinkTokenCost * item.quantity;
+
+      await this.dependencies.articleRepository.save({
+        ...article,
+        stock: article.stock - item.quantity,
+      });
     }
 
     const id = this.dependencies.orderRepository.nextId();

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { PlaceDrinkOrderUseCase } from '../src/use-cases/place-drink-order.use-case.js';
 
@@ -10,69 +10,6 @@ type SavedArticle = {
   drinkTokenCost: number;
   category: 'ALCOHOLIC';
 };
-
-vi.mock('../src/use-cases/place-drink-order.use-case.js', () => ({
-  PlaceDrinkOrderUseCase: class {
-    constructor(
-      private readonly dependencies: {
-        festivalGoerRepository: {
-          findById(id: string): Promise<{ id: string; drinkTokenBalance: number }>;
-        };
-        articleRepository: {
-          findByName(name: string): Promise<{
-            id: string;
-            name: string;
-            stock: number;
-            tokenCost: number;
-            drinkTokenCost: number;
-            category: 'ALCOHOLIC';
-          }>;
-          save(article: {
-            id: string;
-            name: string;
-            stock: number;
-            tokenCost: number;
-            drinkTokenCost: number;
-            category: 'ALCOHOLIC';
-          }): Promise<void>;
-        };
-        orderRepository: {
-          nextId(): string;
-          save(order: {
-            id: string;
-            festivalGoerId: string;
-            items: Array<{ articleName: string; quantity: number }>;
-            status: string;
-          }): Promise<void>;
-        };
-      },
-    ) {}
-
-    async execute(command: {
-      festivalGoerId: string;
-      items: Array<{ articleName: string; quantity: number }>;
-    }): Promise<{ status: string }> {
-      await this.dependencies.festivalGoerRepository.findById(command.festivalGoerId);
-
-      const [item] = command.items;
-      const article = await this.dependencies.articleRepository.findByName(item.articleName);
-
-      await this.dependencies.articleRepository.save({
-        ...article,
-        stock: article.stock - item.quantity,
-      });
-
-      await this.dependencies.orderRepository.save({
-        id: this.dependencies.orderRepository.nextId(),
-        festivalGoerId: command.festivalGoerId,
-        items: command.items,
-        status: 'PENDING',
-      });
-
-      return { status: 'PENDING' };
-    }
-  },
-}));
 
 class FakeFestivalGoerRepository {
   async findById(id: string): Promise<{ id: string; drinkTokenBalance: number }> {

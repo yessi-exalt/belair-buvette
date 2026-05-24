@@ -1,25 +1,18 @@
 // Export your domain types, classes and interfaces here
 
-export type ArticleStock = {
-  articleName: string;
-  availableQuantity: number;
-};
+export { validateArticleInCatalog } from './validate-article-in-catalog.js';
+export {
+  reserveStockForOrder,
+  type ArticleStock,
+  type ReserveStockResult,
+} from './reserve-stock-for-order.js';
+export { StockInsuffisantException, ArticleInconnuException } from './exceptions.js';
+export {
+  type Article,
+  type FestivalGoer,
+  type Order,
+  type ArticleRepository,
+  type FestivalGoerRepository,
+  type OrderRepository,
+} from './repositories.js';
 
-export type ReserveStockResult = {
-  status: string;
-  remainingStocks: ArticleStock[];
-};
-
-export function reserveStockForOrder(
-  _orderItems: Array<{ articleName: string; quantity: number }>,
-  _availableStocks: ArticleStock[],
-): ReserveStockResult {
-  return { status: 'NOT_IMPLEMENTED', remainingStocks: [] };
-}
-
-export function validateArticleInCatalog(
-  _articleId: string,
-  _catalog: ReadonlyArray<{ id: string }>,
-): void {
-  // Not implemented
-}
