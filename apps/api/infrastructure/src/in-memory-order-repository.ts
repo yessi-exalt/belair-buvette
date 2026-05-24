@@ -17,4 +17,16 @@ export class InMemoryOrderRepository implements OrderRepository {
   async findById(orderId: string): Promise<Order> {
     return structuredClone(this.orders.get(orderId) as Order);
   }
+
+  async findByFestivalGoerIdAndStatus(
+    festivalGoerId: string,
+    status: Order['status'],
+  ): Promise<Order[]> {
+    return Array.from(this.orders.values())
+      .filter(
+        (order) =>
+          order.festivalGoerId === festivalGoerId && order.status === status,
+      )
+      .map((order) => structuredClone(order));
+  }
 }
