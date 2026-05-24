@@ -60,4 +60,40 @@ describe('InMemoryOrderRepository', () => {
     expect(foundBeforeExplicitUpdate.status).toBe('EN_ATTENTE');
     expect(found.status).toBe('PRÊTE');
   });
+
+  it('retrieves pending orders for a festival goer', async () => {
+    // Arrange
+    const repository = new InMemoryOrderRepository();
+    const pendingOrderOne: Order = {
+      id: 'order-1',
+      festivalGoerId: 'festivalier-42',
+      status: 'EN_ATTENTE',
+      items: [{ articleName: 'Mojito', quantity: 1 }],
+    };
+    const pendingOrderTwo: Order = {
+      id: 'order-2',
+      festivalGoerId: 'festivalier-42',
+      status: 'EN_ATTENTE',
+      items: [{ articleName: 'Spritz', quantity: 1 }],
+    };
+    const readyOrder: Order = {
+      id: 'order-3',
+      festivalGoerId: 'festivalier-42',
+      status: 'PRÊTE',
+      items: [{ articleName: 'Jus de pomme', quantity: 1 }],
+    };
+
+    await repository.save(pendingOrderOne);
+    await repository.save(pendingOrderTwo);
+    await repository.save(readyOrder);
+
+    // Act
+    const foundOrders = await repository.findByFestivalGoerIdAndStatus(
+      'festivalier-42',
+      'EN_ATTENTE',
+    );
+
+    // Assert
+    expect(foundOrders).toHaveLength(2);
+  });
 });
