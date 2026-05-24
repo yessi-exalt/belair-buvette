@@ -4,13 +4,24 @@ import {
   type CreateOrderRequestPayload,
 } from '../dtos/create-order-request.js';
 import type { CreateOrderResponse } from '../dtos/create-order-response.js';
+import {
+  isPlaceDrinkOrderRequest,
+  type PlaceDrinkOrderRequest,
+  type PlaceDrinkOrderRequestPayload,
+} from '../dtos/place-drink-order-request.js';
+import type { PlaceDrinkOrderResponse } from '../dtos/place-drink-order-response.js';
 
 type CreateOrderUseCase = {
   execute(command: CreateOrderRequest): Promise<CreateOrderResponse>;
 };
 
+type PlaceDrinkOrderUseCase = {
+  execute(command: PlaceDrinkOrderRequest): Promise<PlaceDrinkOrderResponse>;
+};
+
 type OrderControllerDependencies = {
   createOrderUseCase: CreateOrderUseCase;
+  placeDrinkOrderUseCase: PlaceDrinkOrderUseCase;
 };
 
 export class OrderController {
@@ -32,6 +43,30 @@ export class OrderController {
     const response = await this.dependencies.createOrderUseCase.execute({
       festivalGoerId: payload.festivalGoerId,
       articles: payload.articles,
+    });
+
+    return new Response(JSON.stringify(response), {
+      status: 201,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+  }
+
+  public async placeDrinkOrder(request: Request): Promise<Response> {
+    const payload = (await request.json()) as PlaceDrinkOrderRequestPayload;
+
+    if (typeof payload.festivalGoerId !== 'string') {
+      return new Response(null, { status: 401 });
+    }
+
+    if (!isPlaceDrinkOrderRequest(payload)) {
+      return new Response(null, { status: 400 });
+    }
+
+    const response = await this.dependencies.placeDrinkOrderUseCase.execute({
+      festivalGoerId: payload.festivalGoerId,
+      items: payload.items,
     });
 
     return new Response(JSON.stringify(response), {
