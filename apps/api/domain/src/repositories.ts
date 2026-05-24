@@ -32,4 +32,5 @@ export interface FestivalGoerRepository {
 export interface OrderRepository {
   nextId(): string;
   save(order: Order): Promise<void>;
+  findById(id: string): Promise<Order>;
 }
