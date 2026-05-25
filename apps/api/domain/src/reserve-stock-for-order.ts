@@ -4,10 +4,11 @@ export type ArticleStock = {
 };
 
 export type ReserveStockResult = {
-  status: string;
+  status: OrderStatus;
   remainingStocks: ArticleStock[];
 };
 
+import { OrderStatus } from './repositories.js';
 import { StockInsuffisantException } from './exceptions.js';
 
 export function reserveStockForOrder(
@@ -28,5 +29,5 @@ export function reserveStockForOrder(
     matchingStock.availableQuantity -= orderItem.quantity;
   }
 
-  return { status: 'EN_ATTENTE', remainingStocks };
+  return { status: OrderStatus.Pending, remainingStocks };
 }

@@ -12,11 +12,17 @@ export type FestivalGoer = {
   drinkTokenBalance: number;
 };
 
+export enum OrderStatus {
+  Pending = 'EN_ATTENTE',
+  LegacyPending = 'PENDING',
+  Ready = 'PRÊTE',
+}
+
 export type Order = {
   id: string;
   festivalGoerId: string;
   items: Array<{ articleName: string; quantity: number }>;
-  status: string;
+  status: OrderStatus;
 };
 
 export interface ArticleRepository {
