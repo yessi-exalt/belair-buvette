@@ -1,25 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('../src/cancel-order.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/cancel-order.js')>();
-
-  return {
-    ...actual,
-    cancelOrder: ({
-      festivalGoer,
-      order,
-    }: {
-      festivalGoer: { id: string; drinkTokenBalance: number; foodTokenBalance: number };
-      order: { drinkTokenCost: number; foodTokenCost: number };
-    }) => ({
-      festivalGoer: {
-        ...festivalGoer,
-        drinkTokenBalance: festivalGoer.drinkTokenBalance + order.drinkTokenCost,
-        foodTokenBalance: festivalGoer.foodTokenBalance + order.foodTokenCost,
-      },
-    }),
-  };
-});
+import { describe, expect, it } from 'vitest';
 
 import { assertOrderIsCancellable, cancelOrder } from '../src/cancel-order.js';
 import { OrderNotCancellableError } from '../src/exceptions.js';
