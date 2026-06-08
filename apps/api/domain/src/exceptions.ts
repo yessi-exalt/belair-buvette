@@ -15,3 +15,12 @@ export class ArticleInconnuException extends Error {
     this.name = 'ArticleInconnuException';
   }
 }
+
+export class OrderNotCancellableError extends Error {
+  readonly type = 'ORDER_NOT_CANCELLABLE' as const;
+
+  constructor() {
+    super('La commande ne peut pas etre annulee');
+    this.name = 'OrderNotCancellableError';
+  }
+}
