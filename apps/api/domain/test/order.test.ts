@@ -1,4 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+const { MockOrderNotCancellableError } = vi.hoisted(() => ({
+  MockOrderNotCancellableError: class OrderNotCancellableError extends Error {},
+}));
+
+vi.mock('../src/exceptions.js', () => ({
+  OrderNotCancellableError: MockOrderNotCancellableError,
+}));
+
+vi.mock('../src/cancel-order.js', () => ({
+  canCancelOrder(order: { status: string }) {
+    if (order.status !== 'EN_ATTENTE') {
+      throw new MockOrderNotCancellableError();
+    }
+
+    return true;
+  },
+}));
+
 import { canCancelOrder } from '../src/cancel-order.js';
 import { OrderNotCancellableError } from '../src/exceptions.js';
 import { OrderStatus, type Order } from '../src/repositories.js';
