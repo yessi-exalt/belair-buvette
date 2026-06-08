@@ -57,4 +57,31 @@ describe('assertOrderIsCancellable', () => {
       foodTokenBalance: 3,
     });
   });
+
+  it('produces a cancellation confirmation after a successful cancellation', () => {
+    // Arrange
+    const festivalGoer = {
+      id: 'goer-1',
+      drinkTokenBalance: 2,
+      foodTokenBalance: 1,
+    };
+    const order = {
+      id: 'order-1',
+      festivalGoerId: 'goer-1',
+      items: [],
+      status: OrderStatus.Pending,
+      drinkTokenCost: 3,
+      foodTokenCost: 2,
+    };
+
+    // Act
+    const cancellationResult = cancelOrder({ festivalGoer, order });
+
+    // Assert
+    expect(cancellationResult).toMatchObject({
+      cancellationConfirmation: {
+        festivalGoerId: 'goer-1',
+      },
+    });
+  });
 });
