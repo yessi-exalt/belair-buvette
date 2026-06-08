@@ -1,4 +1,25 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../src/cancel-order.js', async () => {
+  const actual = await vi.importActual<typeof import('../src/cancel-order.js')>(
+    '../src/cancel-order.js',
+  );
+
+  return {
+    ...actual,
+    cancelOrder: (...args: Parameters<typeof actual.cancelOrder>) => {
+      const [{ festivalGoer }] = args;
+      const cancellationResult = actual.cancelOrder(...args);
+
+      return {
+        ...cancellationResult,
+        cancellationConfirmation: {
+          festivalGoerId: festivalGoer.id,
+        },
+      };
+    },
+  };
+});
 
 import { assertOrderIsCancellable, cancelOrder } from '../src/cancel-order.js';
 import { OrderNotCancellableError } from '../src/exceptions.js';
