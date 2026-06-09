@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Order } from '@belair-buvette-api/domain';
+import { OrderStatus } from '../../domain/src/repositories.js';
 
 import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
 
@@ -59,6 +60,29 @@ describe('InMemoryOrderRepository', () => {
     // Assert
     expect(foundBeforeExplicitUpdate.status).toBe('EN_ATTENTE');
     expect(found.status).toBe('PRÊTE');
+  });
+
+  it('persists the order with Cancelled status', async () => {
+    // Arrange
+    const repository = new InMemoryOrderRepository();
+    const pendingOrder: Order = {
+      id: 'order-1',
+      festivalGoerId: 'festival-goer-42',
+      status: OrderStatus.Pending,
+      items: [{ articleName: 'Mojito', quantity: 2 }],
+    };
+    const cancelledOrder: Order = {
+      ...pendingOrder,
+      status: OrderStatus.Cancelled,
+    };
+
+    // Act
+    await repository.save(cancelledOrder);
+    const found = await repository.findById('order-1');
+
+    // Assert
+    expect(OrderStatus.Cancelled).toBeDefined();
+    expect(found.status).toBe(OrderStatus.Cancelled);
   });
 
   it('retrieves pending orders for a festival goer', async () => {
