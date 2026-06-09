@@ -14,11 +14,6 @@ type FestivalGoerWithFoodTokens = {
   foodTokenBalance: number;
 };
 
-type CancelledOrderWithTokenCosts = Order & {
-  drinkTokenCost: number;
-  foodTokenCost: number;
-};
-
 vi.mock('@belair-buvette-api/domain', async () => {
   const actual = await vi.importActual<typeof import('@belair-buvette-api/domain')>(
     '@belair-buvette-api/domain',
@@ -34,39 +29,6 @@ vi.mock('@belair-buvette-api/domain', async () => {
     },
   };
 });
-
-vi.mock(
-  '../src/use-cases/cancel-order.use-case.js',
-  () => ({
-    buildCancelOrderUseCase: (
-      festivalGoerRepository: InMemoryFestivalGoerRepository,
-      orderRepository: InMemoryOrderRepository,
-      cancellationNotificationGateway: SpyCancellationNotificationGateway,
-    ) => ({
-      async execute(command: { orderId: string; festivalGoerId: string }) {
-        const festivalGoer = (await festivalGoerRepository.findById(
-          command.festivalGoerId,
-        )) as FestivalGoerWithFoodTokens;
-        const cancelledOrder = (await orderRepository.findById(
-          command.orderId,
-        )) as CancelledOrderWithTokenCosts;
-
-        await festivalGoerRepository.save({
-          ...festivalGoer,
-          drinkTokenBalance:
-            festivalGoer.drinkTokenBalance + cancelledOrder.drinkTokenCost,
-          foodTokenBalance:
-            festivalGoer.foodTokenBalance + cancelledOrder.foodTokenCost,
-        } as FestivalGoerWithFoodTokens);
-
-        await cancellationNotificationGateway.sendCancellationConfirmation({
-          festivalGoerId: command.festivalGoerId,
-        });
-      },
-    }),
-  }),
-  { virtual: true },
-);
 
 class SpyCancellationNotificationGateway {
   public sentConfirmations: Array<{ festivalGoerId: string }> = [];
@@ -153,7 +115,7 @@ describe('Full stack: API → Application → Infrastructure', () => {
     // Assert — pending order is retrievable by festival goer id and status
     const pendingOrders = await orderRepository.findByFestivalGoerIdAndStatus(
       'festivalier-42',
-      'PENDING',
+      OrderStatus.LegacyPending,
     );
     expect(pendingOrders).toHaveLength(1);
     expect(pendingOrders[0].id).toBe(body.id);
@@ -177,7 +139,7 @@ describe('Full stack: API → Application → Infrastructure', () => {
     await orderRepository.save({
       id: 'order-1',
       festivalGoerId: 'festivalier-42',
-      status: OrderStatus.Cancelled,
+      status: 'ANNULÉE' as OrderStatus,
       items: [],
       drinkTokenCost: 3,
       foodTokenCost: 2,

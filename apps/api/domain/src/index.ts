@@ -8,6 +8,7 @@ export {
 } from './reserve-stock-for-order.js';
 export { StockInsuffisantException, ArticleInconnuException } from './exceptions.js';
 export {
+  OrderStatus,
   type Article,
   type FestivalGoer,
   type Order,
