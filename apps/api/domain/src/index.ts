@@ -6,7 +6,11 @@ export {
   type ArticleStock,
   type ReserveStockResult,
 } from './reserve-stock-for-order.js';
-export { StockInsuffisantException, ArticleInconnuException } from './exceptions.js';
+export {
+  StockInsuffisantException,
+  ArticleInconnuException,
+  OrderNotCancellableError,
+} from './exceptions.js';
 export {
   OrderStatus,
   type Article,

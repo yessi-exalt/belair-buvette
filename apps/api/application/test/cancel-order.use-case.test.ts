@@ -1,35 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('../src/index.js', async () => {
-  const { OrderNotCancellableError } = await import(
-    '../../domain/src/exceptions.js'
-  );
-  const { OrderStatus } = await import('../../domain/src/repositories.js');
-
-  class CancelOrderUseCase {
-    public constructor(
-      private readonly dependencies: {
-        orderRepository: {
-          findById(id: string): Promise<{ status: (typeof OrderStatus)[keyof typeof OrderStatus] }>;
-        };
-      },
-    ) {}
-
-    public async execute(command: { orderId: string }): Promise<void> {
-      const order = await this.dependencies.orderRepository.findById(
-        command.orderId,
-      );
-
-      if (order.status !== OrderStatus.Pending) {
-        throw new OrderNotCancellableError();
-      }
-    }
-  }
-
-  return {
-    CancelOrderUseCase,
-  };
-});
+import { describe, expect, it } from 'vitest';
 
 import { CancelOrderUseCase } from '../src/index.js';
 import { OrderNotCancellableError } from '../../domain/src/exceptions.js';

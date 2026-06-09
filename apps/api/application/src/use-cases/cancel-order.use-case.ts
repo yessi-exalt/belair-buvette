@@ -1,4 +1,4 @@
-import { OrderStatus } from '@belair-buvette-api/domain';
+import { OrderNotCancellableError, OrderStatus } from '@belair-buvette-api/domain';
 
 type FestivalGoerWithFoodTokens = {
   id: string;
@@ -44,6 +44,10 @@ export class CancelOrderUseCase {
       command.festivalGoerId,
     );
     const order = await this.dependencies.orderRepository.findById(command.orderId);
+
+    if (order.status !== OrderStatus.Pending) {
+      throw new OrderNotCancellableError();
+    }
 
     await this.dependencies.festivalGoerRepository.save({
       ...festivalGoer,
