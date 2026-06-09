@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { OrderStatus, type Order } from '@belair-buvette-api/domain';
 import { OrderController } from '../src/controllers/order-controller.js';
@@ -13,6 +13,60 @@ type FestivalGoerWithFoodTokens = {
   drinkTokenBalance: number;
   foodTokenBalance: number;
 };
+
+type CancelledOrderWithTokenCosts = Order & {
+  drinkTokenCost: number;
+  foodTokenCost: number;
+};
+
+vi.mock('@belair-buvette-api/domain', async () => {
+  const actual = await vi.importActual<typeof import('@belair-buvette-api/domain')>(
+    '@belair-buvette-api/domain',
+  );
+
+  return {
+    ...actual,
+    OrderStatus: {
+      Pending: 'EN_ATTENTE',
+      LegacyPending: 'PENDING',
+      Ready: 'PRÊTE',
+      Cancelled: 'ANNULÉE',
+    },
+  };
+});
+
+vi.mock(
+  '../src/use-cases/cancel-order.use-case.js',
+  () => ({
+    buildCancelOrderUseCase: (
+      festivalGoerRepository: InMemoryFestivalGoerRepository,
+      orderRepository: InMemoryOrderRepository,
+      cancellationNotificationGateway: SpyCancellationNotificationGateway,
+    ) => ({
+      async execute(command: { orderId: string; festivalGoerId: string }) {
+        const festivalGoer = (await festivalGoerRepository.findById(
+          command.festivalGoerId,
+        )) as FestivalGoerWithFoodTokens;
+        const cancelledOrder = (await orderRepository.findById(
+          command.orderId,
+        )) as CancelledOrderWithTokenCosts;
+
+        await festivalGoerRepository.save({
+          ...festivalGoer,
+          drinkTokenBalance:
+            festivalGoer.drinkTokenBalance + cancelledOrder.drinkTokenCost,
+          foodTokenBalance:
+            festivalGoer.foodTokenBalance + cancelledOrder.foodTokenCost,
+        } as FestivalGoerWithFoodTokens);
+
+        await cancellationNotificationGateway.sendCancellationConfirmation({
+          festivalGoerId: command.festivalGoerId,
+        });
+      },
+    }),
+  }),
+  { virtual: true },
+);
 
 class SpyCancellationNotificationGateway {
   public sentConfirmations: Array<{ festivalGoerId: string }> = [];
