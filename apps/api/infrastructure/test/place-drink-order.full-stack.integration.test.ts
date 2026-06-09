@@ -1,10 +1,28 @@
 import { describe, expect, it } from 'vitest';
 
+import { OrderStatus, type Order } from '@belair-buvette-api/domain';
 import { OrderController } from '../src/controllers/order-controller.js';
 import { InMemoryArticleRepository } from '../src/in-memory-article-repository.js';
 import { InMemoryFestivalGoerRepository } from '../src/in-memory-festival-goer-repository.js';
 import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
+import { buildCancelOrderUseCase } from '../src/use-cases/cancel-order.use-case.js';
 import { buildPlaceDrinkOrderUseCase } from '../src/use-cases/place-drink-order.use-case.js';
+
+type FestivalGoerWithFoodTokens = {
+  id: string;
+  drinkTokenBalance: number;
+  foodTokenBalance: number;
+};
+
+class SpyCancellationNotificationGateway {
+  public sentConfirmations: Array<{ festivalGoerId: string }> = [];
+
+  public async sendCancellationConfirmation(confirmation: {
+    festivalGoerId: string;
+  }): Promise<void> {
+    this.sentConfirmations.push(confirmation);
+  }
+}
 
 describe('Full stack: API → Application → Infrastructure', () => {
   it('places a drink order end-to-end using real repositories', async () => {
@@ -85,5 +103,57 @@ describe('Full stack: API → Application → Infrastructure', () => {
     );
     expect(pendingOrders).toHaveLength(1);
     expect(pendingOrders[0].id).toBe(body.id);
+  });
+
+  it('saves the refunded drink and food token balances and sends confirmation', async () => {
+    // Arrange
+    const initialDrinkTokenBalance = 2;
+    const initialFoodTokenBalance = 1;
+    const festivalGoerRepository = new InMemoryFestivalGoerRepository();
+    const orderRepository = new InMemoryOrderRepository();
+    const cancellationNotificationGateway =
+      new SpyCancellationNotificationGateway();
+
+    festivalGoerRepository.seed({
+      id: 'festivalier-42',
+      drinkTokenBalance: initialDrinkTokenBalance,
+      foodTokenBalance: initialFoodTokenBalance,
+    } as FestivalGoerWithFoodTokens);
+
+    await orderRepository.save({
+      id: 'order-1',
+      festivalGoerId: 'festivalier-42',
+      status: OrderStatus.Cancelled,
+      items: [],
+      drinkTokenCost: 3,
+      foodTokenCost: 2,
+    } as Order);
+
+    const cancelOrderUseCase = buildCancelOrderUseCase(
+      festivalGoerRepository,
+      orderRepository,
+      cancellationNotificationGateway,
+    );
+
+    // Act
+    await cancelOrderUseCase.execute({
+      orderId: 'order-1',
+      festivalGoerId: 'festivalier-42',
+    });
+
+    const updatedFestivalGoer = (await festivalGoerRepository.findById(
+      'festivalier-42',
+    )) as FestivalGoerWithFoodTokens;
+
+    // Assert
+    expect(updatedFestivalGoer.drinkTokenBalance).toBe(
+      initialDrinkTokenBalance + 3,
+    );
+    expect(updatedFestivalGoer.foodTokenBalance).toBe(
+      initialFoodTokenBalance + 2,
+    );
+    expect(cancellationNotificationGateway.sentConfirmations).toEqual([
+      { festivalGoerId: 'festivalier-42' },
+    ]);
   });
 });
