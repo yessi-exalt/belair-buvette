@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CancelOrderUseCase } from '../src/index.js';
+import { OrderNotCancellableError } from '../../domain/src/exceptions.js';
 import { OrderStatus } from '../../domain/src/repositories.js';
 
 type FestivalGoerWithFoodTokens = {
@@ -36,13 +37,14 @@ class FakeFestivalGoerRepository {
 
 class FakeOrderRepository {
   public savedOrder: OrderWithTokenCosts | undefined;
+  public orderStatus = OrderStatus.Pending;
 
   async findById(id: string): Promise<OrderWithTokenCosts> {
     return {
       id,
       festivalGoerId: 'festival-goer-42',
       items: [],
-      status: OrderStatus.Pending,
+      status: this.orderStatus,
       drinkTokenCost: 3,
       foodTokenCost: 2,
     };
@@ -103,5 +105,31 @@ describe('CancelOrderUseCase', () => {
     expect(cancellationNotificationGateway.sentConfirmation).toEqual({
       festivalGoerId: 'festival-goer-42',
     });
+  });
+
+  it('fails with an OrderNotCancellableError when the order is in Acknowledged state and persists no changes', async () => {
+    // Arrange
+    const festivalGoerRepository = new FakeFestivalGoerRepository();
+    const orderRepository = new FakeOrderRepository();
+    const cancellationNotificationGateway =
+      new FakeCancellationNotificationGateway();
+    const useCase = new CancelOrderUseCase({
+      festivalGoerRepository,
+      orderRepository,
+      cancellationNotificationGateway,
+    });
+
+    orderRepository.orderStatus = OrderStatus.Ready;
+
+    // Act
+    const act = useCase.execute({
+      orderId: 'order-123',
+      festivalGoerId: 'festival-goer-42',
+    });
+
+    // Assert
+    await expect(act).rejects.toThrow(OrderNotCancellableError);
+    expect(festivalGoerRepository.savedFestivalGoer).toBeUndefined();
+    expect(orderRepository.savedOrder).toBeUndefined();
   });
 });
