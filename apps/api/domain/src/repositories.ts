@@ -16,6 +16,7 @@ export enum OrderStatus {
   Pending = 'EN_ATTENTE',
   LegacyPending = 'PENDING',
   Ready = 'PRÊTE',
+  Cancelled = 'ANNULÉE',
 }
 
 export type Order = {
