@@ -102,6 +102,31 @@ If the input remains ambiguous after that repair, if `phase` is not `GREEN`, if 
 9. Stop immediately after the validations pass.
 10. Return the final result as JSON only, following the schema below.
 
+## Type & Export Pre-Refactor Validation
+
+**BEFORE starting any code movement**, perform this validation to prevent import/export cascades:
+
+1. **Identify all types imported by the test file** (especially from `@belair-buvette-api/domain`).
+   - Check `domain/src/index.ts` to confirm they are exported in the barrel.
+   - If not exported, add the export immediately as a separate micro-step (before moving production logic).
+   - **HARD STOP** — Do not proceed with refactor if domain types are missing from the barrel.
+
+2. **Check for magic string literals** in the test that should be enum/constant references.
+   - Example: `'PENDING'`, `'EN_ATTENTE'`, `'ANNULÉE'` — these should import `OrderStatus` from domain.
+   - If the test uses literals instead of enum values, note this discrepancy but **do not change test assertions**.
+   - Moving production code does not fix test-setup inconsistencies — that belongs in a separate RED/GREEN cycle.
+
+3. **Verify import paths** — if test-local code references `.js` files (e.g. `'../src/use-cases/cancel-order.use-case.js'`):
+   - Check that the target file either exists or will be created as part of this refactor.
+   - If the file will be created, ensure the import path matches the final production location.
+   - **Validate immediately after file creation** before removing test mocks.
+
+4. **Check test-local mocks** against production file locations:
+   - If test mocks a module at path `'../src/use-cases/X.use-case.js'`, but production code will live at `'../src/use-cases/X.ts'`, the mock will shadow the real code.
+   - Ensure file extensions, relative paths, and import syntax align before refactoring.
+
+---
+
 ## Routing rules
 
 Infer the scope from the GREEN JSON first, then confirm it against `testFilePath`.
@@ -250,6 +275,32 @@ Created CommandesController, CreerCommandeRequest, CreerCommandeResponse, and wi
 
 Each class or type is a separate micro-step with its own focused test run.
 
+### ❌ Missing barrel exports before refactoring
+
+```typescript
+// WRONG — test imports OrderStatus but it's not exported from domain/src/index.ts
+import { OrderStatus } from '@belair-buvette-api/domain'; // ❌ not exported
+
+// Then refactoring happens without fixing the export
+// Result: TypeScript error, failed type-checking in tests
+```
+
+Fix: Before moving production code, ensure all types consumed by tests are exported from their source barrel.
+
+### ❌ Mismatched file paths between test mock and production file
+
+```typescript
+// Test mocks:
+vi.mock('../src/use-cases/cancel-order.use-case.js', ...)
+
+// Production creates:
+// apps/api/infrastructure/src/use-cases/cancel-order.use-case.ts (no .js extension)
+
+// Result: Mock shadows production code because import paths don't match
+```
+
+Fix: Verify file extensions and import paths align before creating production files and removing mocks.
+
 ## Refactoring rules
 
 - Prefer existing production classes and modules over creating new abstractions.
@@ -273,6 +324,7 @@ Before returning the JSON result, verify all of the following:
 - the moved production logic no longer lives in test-only support code,
 - no observable behavior asserted by the existing tests changed,
 - all modified files respect the expected architecture layer,
+- all types used by test files are exported from their source barrel (domain `index.ts`, application `index.ts`, infrastructure `index.ts`, etc.),
 - each file listed in `productionFilesModified` and `testFilesModified` was actually written or created in this session, not only read,
 - the owning `AGENTS.MD` and testing-guidelines reference files were loaded before refactoring,
 - the output JSON includes every required top-level key from the schema (none omitted),
