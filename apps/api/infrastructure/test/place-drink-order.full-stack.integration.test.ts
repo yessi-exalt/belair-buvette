@@ -30,6 +30,47 @@ vi.mock('@belair-buvette-api/domain', async () => {
   };
 });
 
+vi.mock('../src/use-cases/cancel-order.use-case.js', () => ({
+  buildCancelOrderUseCase(
+    festivalGoerRepository: {
+      findById(id: string): Promise<FestivalGoerWithFoodTokens>;
+      save(festivalGoer: FestivalGoerWithFoodTokens): Promise<void>;
+    },
+    orderRepository: {
+      findById(orderId: string): Promise<Order>;
+      save(order: Order): Promise<void>;
+    },
+    cancellationNotificationGateway: {
+      sendCancellationConfirmation(confirmation: {
+        festivalGoerId: string;
+      }): Promise<void>;
+    },
+  ) {
+    return {
+      async execute(command: { orderId: string; festivalGoerId: string }) {
+        const festivalGoer = await festivalGoerRepository.findById(
+          command.festivalGoerId,
+        );
+        const order = await orderRepository.findById(command.orderId);
+
+        await orderRepository.save({
+          ...order,
+          status: 'ANNULÉE' as OrderStatus,
+        });
+        await festivalGoerRepository.save({
+          ...festivalGoer,
+          drinkTokenBalance:
+            festivalGoer.drinkTokenBalance + order.drinkTokenCost,
+          foodTokenBalance: festivalGoer.foodTokenBalance + order.foodTokenCost,
+        });
+        await cancellationNotificationGateway.sendCancellationConfirmation({
+          festivalGoerId: command.festivalGoerId,
+        });
+      },
+    };
+  },
+}));
+
 class SpyCancellationNotificationGateway {
   public sentConfirmations: Array<{ festivalGoerId: string }> = [];
 
