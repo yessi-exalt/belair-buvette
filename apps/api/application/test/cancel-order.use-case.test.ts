@@ -38,8 +38,13 @@ class FakeFestivalGoerRepository {
 class FakeOrderRepository {
   public savedOrder: OrderWithTokenCosts | undefined;
   public orderStatus = OrderStatus.Pending;
+  public shouldReturnMissingOrder = false;
 
   async findById(id: string): Promise<OrderWithTokenCosts> {
+    if (this.shouldReturnMissingOrder) {
+      return undefined as never;
+    }
+
     return {
       id,
       festivalGoerId: 'festival-goer-42',
@@ -131,5 +136,31 @@ describe('CancelOrderUseCase', () => {
     await expect(act).rejects.toThrow(OrderNotCancellableError);
     expect(festivalGoerRepository.savedFestivalGoer).toBeUndefined();
     expect(orderRepository.savedOrder).toBeUndefined();
+  });
+
+  it('fails with an OrderNotFoundError when the order is not found', async () => {
+    // Arrange
+    const festivalGoerRepository = new FakeFestivalGoerRepository();
+    const orderRepository = new FakeOrderRepository();
+    const cancellationNotificationGateway =
+      new FakeCancellationNotificationGateway();
+    const useCase = new CancelOrderUseCase({
+      festivalGoerRepository,
+      orderRepository,
+      cancellationNotificationGateway,
+    });
+
+    orderRepository.shouldReturnMissingOrder = true;
+
+    // Act
+    const act = useCase.execute({
+      orderId: 'unknown-order-id',
+      festivalGoerId: 'festival-goer-42',
+    });
+
+    // Assert
+    await expect(act).rejects.toMatchObject({
+      name: 'OrderNotFoundError',
+    });
   });
 });
