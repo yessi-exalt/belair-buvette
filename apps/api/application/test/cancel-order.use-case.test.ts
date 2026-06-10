@@ -19,6 +19,13 @@ type OrderWithTokenCosts = {
   foodTokenCost: number;
 };
 
+class OrderNotFoundError extends Error {
+  public constructor() {
+    super('Order not found');
+    this.name = 'OrderNotFoundError';
+  }
+}
+
 class FakeFestivalGoerRepository {
   public savedFestivalGoer: FestivalGoerWithFoodTokens | undefined;
 
@@ -42,7 +49,7 @@ class FakeOrderRepository {
 
   async findById(id: string): Promise<OrderWithTokenCosts> {
     if (this.shouldReturnMissingOrder) {
-      return undefined as never;
+      throw new OrderNotFoundError();
     }
 
     return {
