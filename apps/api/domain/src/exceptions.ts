@@ -16,6 +16,15 @@ export class ArticleInconnuException extends Error {
   }
 }
 
+export class OrderNotFoundError extends Error {
+  readonly type = 'ORDER_NOT_FOUND' as const;
+
+  constructor(orderId?: string) {
+    super(orderId ? `Commande introuvable : ${orderId}` : 'Commande introuvable');
+    this.name = 'OrderNotFoundError';
+  }
+}
+
 export class OrderNotCancellableError extends Error {
   readonly type = 'ORDER_NOT_CANCELLABLE' as const;
 

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { CancelOrderUseCase } from '../src/index.js';
-import { OrderNotCancellableError } from '../../domain/src/exceptions.js';
+import {
+  OrderNotCancellableError,
+  OrderNotFoundError,
+} from '../../domain/src/exceptions.js';
 import { OrderStatus } from '../../domain/src/repositories.js';
 
 type FestivalGoerWithFoodTokens = {
@@ -18,13 +21,6 @@ type OrderWithTokenCosts = {
   drinkTokenCost: number;
   foodTokenCost: number;
 };
-
-class OrderNotFoundError extends Error {
-  public constructor() {
-    super('Order not found');
-    this.name = 'OrderNotFoundError';
-  }
-}
 
 class FakeFestivalGoerRepository {
   public savedFestivalGoer: FestivalGoerWithFoodTokens | undefined;

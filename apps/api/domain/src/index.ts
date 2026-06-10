@@ -9,6 +9,7 @@ export {
 export {
   StockInsuffisantException,
   ArticleInconnuException,
+  OrderNotFoundError,
   OrderNotCancellableError,
 } from './exceptions.js';
 export {
