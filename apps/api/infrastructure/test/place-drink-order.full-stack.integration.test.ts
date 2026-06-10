@@ -55,7 +55,7 @@ vi.mock('../src/use-cases/cancel-order.use-case.js', () => ({
 
         await orderRepository.save({
           ...order,
-          status: 'ANNULÉE' as OrderStatus,
+          status: OrderStatus.Cancelled,
         });
         await festivalGoerRepository.save({
           ...festivalGoer,
