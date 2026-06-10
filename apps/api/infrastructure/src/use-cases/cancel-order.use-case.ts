@@ -1,8 +1,5 @@
-import { cancelOrder } from '../../../domain/src/cancel-order.js';
-import type {
-  FestivalGoerRepository,
-  OrderRepository,
-} from '@belair-buvette-api/domain';
+import { CancelOrderUseCase } from '@belair-buvette-api/application';
+import { type OrderStatus } from '@belair-buvette-api/domain';
 
 type CancelOrderCommand = {
   orderId: string;
@@ -15,7 +12,11 @@ type FestivalGoerWithFoodTokens = {
   foodTokenBalance: number;
 };
 
-type CancelledOrderWithTokenCosts = {
+type OrderWithTokenCosts = {
+  id: string;
+  festivalGoerId: string;
+  items: Array<{ articleName: string; quantity: number }>;
+  status: OrderStatus;
   drinkTokenCost: number;
   foodTokenCost: number;
 };
@@ -26,32 +27,24 @@ type CancellationNotificationGateway = {
   }): Promise<void>;
 };
 
-type CancelOrderUseCase = {
-  execute(command: CancelOrderCommand): Promise<void>;
+type FestivalGoerRepositoryWithFoodTokens = {
+  findById(id: string): Promise<FestivalGoerWithFoodTokens>;
+  save(festivalGoer: FestivalGoerWithFoodTokens): Promise<void>;
+};
+
+type OrderRepositoryWithTokenCosts = {
+  findById(id: string): Promise<OrderWithTokenCosts>;
+  save(order: OrderWithTokenCosts): Promise<void>;
 };
 
 export function buildCancelOrderUseCase(
-  festivalGoerRepository: FestivalGoerRepository,
-  orderRepository: OrderRepository,
+  festivalGoerRepository: FestivalGoerRepositoryWithFoodTokens,
+  orderRepository: OrderRepositoryWithTokenCosts,
   cancellationNotificationGateway: CancellationNotificationGateway,
 ): CancelOrderUseCase {
-  return {
-    async execute(command: CancelOrderCommand): Promise<void> {
-      const festivalGoer =
-        (await festivalGoerRepository.findById(command.festivalGoerId)) as FestivalGoerWithFoodTokens;
-      const order = (await orderRepository.findById(
-        command.orderId,
-      )) as CancelledOrderWithTokenCosts;
-
-      const cancellationResult = cancelOrder({
-        festivalGoer,
-        order,
-      });
-
-      await festivalGoerRepository.save(cancellationResult.festivalGoer);
-      await cancellationNotificationGateway.sendCancellationConfirmation(
-        cancellationResult.cancellationConfirmation,
-      );
-    },
-  };
+  return new CancelOrderUseCase({
+    festivalGoerRepository,
+    orderRepository,
+    cancellationNotificationGateway,
+  });
 }
