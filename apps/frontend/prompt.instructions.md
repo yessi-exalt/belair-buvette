@@ -39,6 +39,15 @@ Every prompt file should include YAML frontmatter with the following fields:
 - Use kebab-case filenames ending with `.prompt.md` and store them under `.github/prompts/` unless your workspace standard specifies another directory.
 - Provide a short filename that communicates the action (for example, `generate-readme.prompt.md` rather than `prompt1.prompt.md`).
 
+## RED Failure Attribution
+
+- Prompts for the RED phase must require an attributable failing signal.
+- Require a preflight run of any existing test file before reusing it.
+- If the existing file already fails or has unrelated diagnostics, instruct Copilot to create a new isolated test file or stop.
+- Prefer assertion-level or API-level failures over module-resolution failures.
+- Allow `Cannot find module` only when the prompt explicitly introduces the first scenario for a brand-new production surface in a new isolated test file.
+- Reject any RED outcome that fails for unrelated reasons.
+
 ## Body Structure
 
 - Start with an `#` level heading that matches the prompt intent so it surfaces well in Quick Pick search.

@@ -83,6 +83,15 @@ Create `domain/test/place-drink-order.test.ts` for a use-case orchestration scen
 - The prompt must say that only failing tests, test doubles, and test-only fixtures may be added or changed in RED.
 - The prompt must instruct Copilot to stop after the failing test is written and validated as failing.
 
+### RED Failure Attribution
+
+- Prompts for the RED phase must require an attributable failing signal.
+- Require a preflight run of any existing test file before reusing it.
+- If the existing file already fails or has unrelated diagnostics, instruct Copilot to create a new isolated test file or stop.
+- Prefer assertion-level or API-level failures over module-resolution failures.
+- Allow `Cannot find module` only when the prompt explicitly introduces the first scenario for a brand-new production surface in a new isolated test file.
+- Reject any RED outcome that fails for unrelated reasons.
+
 Required wording pattern:
 
 ```markdown
@@ -93,6 +102,12 @@ Explicit negative example:
 
 ```markdown
 Do not add `export class PlaceDrinkOrderUseCase` to `application/src/index.ts` during the RED phase just to make the test compile or pass.
+```
+
+Additional negative example:
+
+```markdown
+Do not append a new RED scenario to an existing test file that already fails for another reason. Run the existing file first and isolate the new scenario if needed.
 ```
 
 ## Frontmatter Requirements

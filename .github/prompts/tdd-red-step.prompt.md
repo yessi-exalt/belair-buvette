@@ -25,16 +25,22 @@ Stop immediately after validating that the selected test fails.
 
 1. Resolve the scenario.
    - If the user provides an issue reference, extract the exact target scenario.
-   - If the scenario is ambiguous, spans multiple scenarios, or does not identify a clear app/layer/slice, ask for clarification and stop.
+  - If the scenario is ambiguous, spans multiple scenarios, names a scenario range, or does not identify a clear app/layer/slice, ask for clarification and stop.
+  - HARD STOP — If the input names more than one scenario, a scenario range, or a feature summary without one exact scenario (examples: `scenario 1-3`, `the acknowledge-order feature`, `add all preparation time tests`), ask for one exact scenario and stop.
 2. Determine the target app and test scope before writing any code.
-3. Reuse a nearby existing test file when it already covers the same scope.
-4. Otherwise create one new test file in the correct location using the repository naming conventions below.
-5. Write one failing test that mirrors the selected scenario exactly.
+3. Choose a candidate test file only if it already targets the same production surface.
+4. Before editing that existing file, run it as-is.
+  - If it already fails, has unrelated diagnostics, or cannot be collected cleanly, do not add the new scenario to that file.
+  - In that case, create a new isolated test file for the selected scenario or stop and report the blocker.
+5. Otherwise create one new test file in the correct location using the repository naming conventions below.
+6. Write one failing test that mirrors the selected scenario exactly.
    - Reuse the same business data as the scenario.
    - Assert every observable outcome named in the scenario.
    - Do not merge multiple Gherkin scenarios into one test.
-6. Run only the targeted test from the owning package and confirm it fails.
-7. Stop. Do not enter the GREEN phase and do not suggest production code changes in the same run.
+  - HARD STOP — Never expand one request into multiple new `it()` blocks. One RED run produces exactly one new scenario test.
+7. Run only the targeted test from the owning package, preferably with an exact test-name filter when the runner supports it, and confirm that the failure is attributable to the new scenario.
+8. Stop only if the observed failure is the intended RED signal for that scenario.
+9. Stop. Do not enter the GREEN phase and do not suggest production code changes in the same run.
 
 ## Routing rules
 
@@ -83,6 +89,30 @@ Bad naming examples:
 - Do not add exports, do not update barrel files, do not edit `src/index.ts`, do not change app wiring, and do not create production helpers just to satisfy the test.
 - The test must fail for a real reason in the current codebase, not because of a syntax error you introduced deliberately.
 
+## RED Failure Attribution
+
+Accept the RED result only if the failure is attributable to the selected scenario.
+
+Preferred RED signals:
+
+- one failed assertion in the new test
+- one thrown business error explicitly exercised by the new test
+- one type or API mismatch directly caused by the new scenario expectation against an existing production surface
+
+Acceptable but restricted RED signal:
+
+- `Cannot find module '<expected production file>'` only when the selected scenario is the first scenario for a brand-new production surface and the test lives in a new isolated test file created for that surface
+
+Not acceptable RED signals:
+
+- unrelated type errors already present in the reused file
+- failures in other tests from the same file
+- adding multiple new scenarios in one run
+- collection failure caused by an existing dirty test file
+- missing exports, missing files, or broken imports outside the exact surface introduced by the selected scenario
+
+If the failure is not attributable to the new scenario, change the test-file strategy or ask for clarification. Do not accept the RED step.
+
 Explicit negative examples:
 
 ```markdown
@@ -100,9 +130,12 @@ Do not use `await import('../src/index.js')` or `await import('../index')` to ch
 - For frontend component tests, use Testing Library semantic queries and `userEvent`.
 - Follow Arrange / Act / Assert.
 - Add exactly **one new failing `it()` block** per RED step. Do not merge multiple Gherkin scenarios into a single test.
-- If a test file already exists for the same adapter or scope (e.g., `in-memory-order-repository.test.ts`), **add the new `it()` to that file**. Do not create a separate file for every scenario.
+- Reuse an existing test file only when it already covers the same production surface and can be run cleanly before your edit.
+- If reusing the file would mix the new scenario with unrelated failures or unrelated legacy setup, create a dedicated new test file instead.
 - When a Gherkin scenario contains multiple `And` outcomes, keep them together in the same test because they belong to the same scenario.
-- Do not use `await import('../index')` or `await import('../src/index.js')`. Use a **static `import` statement** pointing directly to the expected production file path (e.g., `import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js'`). The test must fail because the source file does not exist yet, producing a `Cannot find module` error at collection time.
+- Prefer a RED failure at assertion or API level over a file-collection failure.
+- Do not use `await import('../index')` or `await import('../src/index.js')`. Use a **static `import` statement** pointing directly to the expected production file path (e.g., `import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js'`).
+- Use a missing-module RED only for the very first scenario of a brand-new production file, and only in a new isolated test file.
 - **Never use `declare const ClassName` or `declare class ClassName`.** These bypass the module system entirely and produce a `ReferenceError: ClassName is not defined` at runtime. That is not a valid RED failure — it proves nothing about the missing implementation.
 
 ## Run commands
@@ -151,15 +184,27 @@ describe('InMemoryOrderRepository', () => {
 });
 ```
 
-Expected RED failure: `Error: Cannot find module '../src/in-memory-order-repository.js'`
+Preferred RED failure:
+
+- the test is collected and fails on its assertion or on a direct API mismatch
+
+Acceptable only for a brand-new adapter surface in a brand-new isolated test file:
+
+- `Error: Cannot find module '../src/in-memory-order-repository.js'`
 
 **Not acceptable:** `ReferenceError: InMemoryOrderRepository is not defined` — this means a `declare const` was used instead of a real import, which is always wrong.
 
+Also not acceptable:
+
+- a failure coming from another pre-existing test in the same file
+- a TypeScript diagnostic unrelated to the selected scenario
+- multiple new `it()` blocks added in one RED run
+
 Expected outcome:
 
-- add the new `it()` block to the existing `infrastructure/test/in-memory-order-repository.test.ts` when that file already covers the same adapter
+- add the new `it()` block to the existing `infrastructure/test/in-memory-order-repository.test.ts` only when that file already covers the same adapter and runs cleanly before the edit
 - the test imports the adapter via a static `import` from `../src/`
-- it fails at module resolution, not at runtime
+- the RED failure is attributable to the selected scenario
 - stop without creating `apps/api/infrastructure/src/in-memory-order-repository.ts`
 
 ### Frontend RED example
