@@ -90,4 +90,37 @@ describe('calculateEstimatedPreparationTime', () => {
     // Assert
     expect(estimatedPreparationTime).toBe(18);
   });
+
+  it('returns 8 minutes for 2 normal alcoholic drinks with 4 minutes of workload', () => {
+    // Arrange
+    const order = {
+      id: 'order-3',
+      festivalGoerId: 'goer-3',
+      items: [{ articleName: 'Beer', quantity: 2 }],
+      status: 'EN_ATTENTE',
+      drinkTokenCost: 2,
+      foodTokenCost: 0,
+    };
+    const catalog = [
+      {
+        id: 'article-5',
+        name: 'Beer',
+        stock: 10,
+        tokenCost: 1,
+        drinkTokenCost: 1,
+        category: 'ALCOHOLIC',
+      },
+    ];
+    const currentWorkloadInMinutes = 4;
+
+    // Act
+    const estimatedPreparationTime = calculateEstimatedPreparationTime({
+      order,
+      catalog,
+      currentWorkloadInMinutes,
+    });
+
+    // Assert
+    expect(estimatedPreparationTime).toBe(8);
+  });
 });
