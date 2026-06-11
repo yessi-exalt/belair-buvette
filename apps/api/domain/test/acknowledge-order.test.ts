@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateEstimatedPreparationTime } from '../src/acknowledge-order.js';
+import { acknowledgeOrder, calculateEstimatedPreparationTime } from '../src/acknowledge-order.js';
+import { OrderStatus } from '../src/repositories.js';
 
 describe('calculateEstimatedPreparationTime', () => {
   it('returns 2 minutes for 2 distinct non-alcoholic drinks with no workload', () => {
@@ -122,5 +123,37 @@ describe('calculateEstimatedPreparationTime', () => {
 
     // Assert
     expect(estimatedPreparationTime).toBe(8);
+  });
+});
+
+describe('acknowledgeOrder', () => {
+  it('transitions a Pending order to Acknowledged state and records the computed estimated preparation time', () => {
+    // Arrange
+    const order = {
+      id: 'order-4',
+      festivalGoerId: 'goer-4',
+      items: [],
+      status: OrderStatus.Pending,
+      drinkTokenCost: 0,
+      foodTokenCost: 0,
+    };
+    const catalog = [];
+    const currentWorkloadInMinutes = 4;
+    const expectedEstimatedPreparationTime = calculateEstimatedPreparationTime({
+      order,
+      catalog,
+      currentWorkloadInMinutes,
+    });
+
+    // Act
+    const acknowledgedOrder = acknowledgeOrder({
+      order,
+      catalog,
+      currentWorkloadInMinutes,
+    });
+
+    // Assert
+    expect(acknowledgedOrder.status).toBe('ACKNOWLEDGED');
+    expect(acknowledgedOrder.estimatedPreparationTime).toBe(expectedEstimatedPreparationTime);
   });
 });
