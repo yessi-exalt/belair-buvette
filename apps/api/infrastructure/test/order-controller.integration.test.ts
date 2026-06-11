@@ -54,13 +54,34 @@ class FakePlaceDrinkOrderUseCase {
   }
 }
 
+class FakeCancelOrderUseCase {
+  public receivedCommand:
+    | {
+        orderId: string;
+        festivalGoerId: string;
+      }
+    | undefined;
+
+  public executeCalls = 0;
+
+  public async execute(command: {
+    orderId: string;
+    festivalGoerId: string;
+  }): Promise<void> {
+    this.receivedCommand = command;
+    this.executeCalls += 1;
+  }
+}
+
 describe('OrderController', () => {
   it('creates an order successfully by delegating to the use case', async () => {
     const createOrderUseCase = new FakeCreateOrderUseCase();
     const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+    const cancelOrderUseCase = new FakeCancelOrderUseCase();
     const controller = new OrderController({
       createOrderUseCase,
       placeDrinkOrderUseCase,
+      cancelOrderUseCase,
     });
 
     const request = new Request('http://belair.test/orders', {
@@ -89,9 +110,11 @@ describe('OrderController', () => {
   it('rejects the request when the festival goer is not authenticated', async () => {
     const createOrderUseCase = new FakeCreateOrderUseCase();
     const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+    const cancelOrderUseCase = new FakeCancelOrderUseCase();
     const controller = new OrderController({
       createOrderUseCase,
       placeDrinkOrderUseCase,
+      cancelOrderUseCase,
     });
 
     const request = new Request('http://belair.test/orders', {
@@ -113,9 +136,11 @@ describe('OrderController', () => {
   it('rejects the request when the body is invalid', async () => {
     const createOrderUseCase = new FakeCreateOrderUseCase();
     const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+    const cancelOrderUseCase = new FakeCancelOrderUseCase();
     const controller = new OrderController({
       createOrderUseCase,
       placeDrinkOrderUseCase,
+      cancelOrderUseCase,
     });
 
     const request = new Request('http://belair.test/orders', {
@@ -138,9 +163,11 @@ describe('OrderController', () => {
     it('places a drink order successfully by delegating to the use case', async () => {
       const createOrderUseCase = new FakeCreateOrderUseCase();
       const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+      const cancelOrderUseCase = new FakeCancelOrderUseCase();
       const controller = new OrderController({
         createOrderUseCase,
         placeDrinkOrderUseCase,
+        cancelOrderUseCase,
       });
 
       const request = new Request('http://belair.test/drink-orders', {
@@ -175,9 +202,11 @@ describe('OrderController', () => {
     it('rejects when the festival goer is not authenticated', async () => {
       const createOrderUseCase = new FakeCreateOrderUseCase();
       const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+      const cancelOrderUseCase = new FakeCancelOrderUseCase();
       const controller = new OrderController({
         createOrderUseCase,
         placeDrinkOrderUseCase,
+        cancelOrderUseCase,
       });
 
       const request = new Request('http://belair.test/drink-orders', {
@@ -197,9 +226,11 @@ describe('OrderController', () => {
     it('rejects when the body is invalid', async () => {
       const createOrderUseCase = new FakeCreateOrderUseCase();
       const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+      const cancelOrderUseCase = new FakeCancelOrderUseCase();
       const controller = new OrderController({
         createOrderUseCase,
         placeDrinkOrderUseCase,
+        cancelOrderUseCase,
       });
 
       const request = new Request('http://belair.test/drink-orders', {
@@ -214,6 +245,91 @@ describe('OrderController', () => {
 
       expect(response.status).toBe(400);
       expect(placeDrinkOrderUseCase.executeCalls).toBe(0);
+    });
+  });
+
+  describe('cancelOrder', () => {
+    it('cancels an order successfully by delegating to the use case', async () => {
+      const createOrderUseCase = new FakeCreateOrderUseCase();
+      const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+      const cancelOrderUseCase = new FakeCancelOrderUseCase();
+      const controller = new OrderController({
+        createOrderUseCase,
+        placeDrinkOrderUseCase,
+        cancelOrderUseCase,
+      });
+
+      const request = new Request('http://belair.test/orders/cancel', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          festivalGoerId: 'festival-goer-42',
+          orderId: 'order-123',
+        }),
+      });
+
+      const response = await controller.cancelOrder(request);
+      const body = (await response.json()) as {
+        orderId: string;
+        status: string;
+      };
+
+      expect(response.status).toBe(200);
+      expect(body.orderId).toBe('order-123');
+      expect(body.status).toBe('CANCELLED');
+      expect(cancelOrderUseCase.executeCalls).toBe(1);
+      expect(cancelOrderUseCase.receivedCommand).toEqual({
+        festivalGoerId: 'festival-goer-42',
+        orderId: 'order-123',
+      });
+    });
+
+    it('rejects when the festival goer is not authenticated', async () => {
+      const createOrderUseCase = new FakeCreateOrderUseCase();
+      const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+      const cancelOrderUseCase = new FakeCancelOrderUseCase();
+      const controller = new OrderController({
+        createOrderUseCase,
+        placeDrinkOrderUseCase,
+        cancelOrderUseCase,
+      });
+
+      const request = new Request('http://belair.test/orders/cancel', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          orderId: 'order-123',
+        }),
+      });
+
+      const response = await controller.cancelOrder(request);
+
+      expect(response.status).toBe(401);
+      expect(cancelOrderUseCase.executeCalls).toBe(0);
+    });
+
+    it('rejects when the body is invalid', async () => {
+      const createOrderUseCase = new FakeCreateOrderUseCase();
+      const placeDrinkOrderUseCase = new FakePlaceDrinkOrderUseCase();
+      const cancelOrderUseCase = new FakeCancelOrderUseCase();
+      const controller = new OrderController({
+        createOrderUseCase,
+        placeDrinkOrderUseCase,
+        cancelOrderUseCase,
+      });
+
+      const request = new Request('http://belair.test/orders/cancel', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          festivalGoerId: 'festival-goer-42',
+        }),
+      });
+
+      const response = await controller.cancelOrder(request);
+
+      expect(response.status).toBe(400);
+      expect(cancelOrderUseCase.executeCalls).toBe(0);
     });
   });
 });

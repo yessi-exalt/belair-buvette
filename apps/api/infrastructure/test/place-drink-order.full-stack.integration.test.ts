@@ -70,6 +70,9 @@ describe('Full stack: API → Application → Infrastructure', () => {
         execute: async () => ({ orderId: 'stub' }),
       },
       placeDrinkOrderUseCase,
+      cancelOrderUseCase: {
+        execute: async () => undefined,
+      },
     });
 
     const request = new Request('http://belair.test/orders/drinks', {
@@ -139,7 +142,7 @@ describe('Full stack: API → Application → Infrastructure', () => {
     await orderRepository.save({
       id: 'order-1',
       festivalGoerId: 'festivalier-42',
-      status: 'ANNULÉE' as OrderStatus,
+      status: OrderStatus.Pending,
       items: [],
       drinkTokenCost: 3,
       foodTokenCost: 2,

@@ -5,6 +5,12 @@ import {
 } from '../dtos/create-order-request.js';
 import type { CreateOrderResponse } from '../dtos/create-order-response.js';
 import {
+  isCancelOrderRequest,
+  type CancelOrderRequest,
+  type CancelOrderRequestPayload,
+} from '../dtos/cancel-order-request.js';
+import type { CancelOrderResponse } from '../dtos/cancel-order-response.js';
+import {
   isPlaceDrinkOrderRequest,
   type PlaceDrinkOrderRequest,
   type PlaceDrinkOrderRequestPayload,
@@ -15,12 +21,17 @@ type CreateOrderUseCase = {
   execute(command: CreateOrderRequest): Promise<CreateOrderResponse>;
 };
 
+type CancelOrderUseCase = {
+  execute(command: CancelOrderRequest): Promise<void>;
+};
+
 type PlaceDrinkOrderUseCase = {
   execute(command: PlaceDrinkOrderRequest): Promise<PlaceDrinkOrderResponse>;
 };
 
 type OrderControllerDependencies = {
   createOrderUseCase: CreateOrderUseCase;
+  cancelOrderUseCase: CancelOrderUseCase;
   placeDrinkOrderUseCase: PlaceDrinkOrderUseCase;
 };
 
@@ -75,5 +86,35 @@ export class OrderController {
         'content-type': 'application/json',
       },
     });
+  }
+
+  public async cancelOrder(request: Request): Promise<Response> {
+    const payload = (await request.json()) as CancelOrderRequestPayload;
+
+    if (typeof payload.festivalGoerId !== 'string') {
+      return new Response(null, { status: 401 });
+    }
+
+    if (!isCancelOrderRequest(payload)) {
+      return new Response(null, { status: 400 });
+    }
+
+    await this.dependencies.cancelOrderUseCase.execute({
+      festivalGoerId: payload.festivalGoerId,
+      orderId: payload.orderId,
+    });
+
+    return new Response(
+      JSON.stringify({
+        orderId: payload.orderId,
+        status: 'CANCELLED',
+      }),
+      {
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
+    );
   }
 }

@@ -10,6 +10,7 @@ export type Article = {
 export type FestivalGoer = {
   id: string;
   drinkTokenBalance: number;
+  foodTokenBalance: number;
 };
 
 export enum OrderStatus {
@@ -24,6 +25,8 @@ export type Order = {
   festivalGoerId: string;
   items: Array<{ articleName: string; quantity: number }>;
   status: OrderStatus;
+  drinkTokenCost: number;
+  foodTokenCost: number;
 };
 
 export interface ArticleRepository {
