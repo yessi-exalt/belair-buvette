@@ -16,10 +16,31 @@ export const calculateEstimatedPreparationTime = ({
   catalog,
   currentWorkloadInMinutes,
 }: CalculateEstimatedPreparationTimeParams): number => {
-  const nonAlcoholicDrinkTypes = order.items.filter((item) =>
-    catalog.some(
-      (article) => article.name === item.articleName && article.category === 'NON_ALCOHOLIC',
-    ),
+  const categorizedItems = order.items.map((item) => ({
+    item,
+    article: catalog.find((article) => article.name === item.articleName),
+  }));
+
+  const mealCount = categorizedItems.filter(({ article }) => article?.category === 'MEAL').length;
+
+  if (mealCount > 0) {
+    const longestDrinkPreparationTime = categorizedItems.reduce((longestPreparationTime, entry) => {
+      if (entry.article?.category === 'PREMIUM_ALCOHOLIC') {
+        return Math.max(longestPreparationTime, 3);
+      }
+
+      if (entry.article?.category === 'NON_ALCOHOLIC') {
+        return Math.max(longestPreparationTime, 1);
+      }
+
+      return longestPreparationTime;
+    }, 0);
+
+    return currentWorkloadInMinutes + mealCount * 10 + longestDrinkPreparationTime;
+  }
+
+  const nonAlcoholicDrinkTypes = categorizedItems.filter(
+    ({ article }) => article?.category === 'NON_ALCOHOLIC',
   ).length;
 
   return currentWorkloadInMinutes + nonAlcoholicDrinkTypes;

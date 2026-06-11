@@ -46,4 +46,48 @@ describe('calculateEstimatedPreparationTime', () => {
     // Assert
     expect(estimatedPreparationTime).toBe(2);
   });
+
+  it('returns 18 minutes for 1 meal and 1 premium alcoholic drink with 5 minutes of workload', () => {
+    // Arrange
+    const order = {
+      id: 'order-2',
+      festivalGoerId: 'goer-2',
+      items: [
+        { articleName: 'Burger', quantity: 1 },
+        { articleName: 'Champagne', quantity: 1 },
+      ],
+      status: 'EN_ATTENTE',
+      drinkTokenCost: 3,
+      foodTokenCost: 10,
+    };
+    const catalog = [
+      {
+        id: 'article-3',
+        name: 'Burger',
+        stock: 10,
+        tokenCost: 10,
+        drinkTokenCost: 0,
+        category: 'MEAL',
+      },
+      {
+        id: 'article-4',
+        name: 'Champagne',
+        stock: 10,
+        tokenCost: 3,
+        drinkTokenCost: 3,
+        category: 'PREMIUM_ALCOHOLIC',
+      },
+    ];
+    const currentWorkloadInMinutes = 5;
+
+    // Act
+    const estimatedPreparationTime = calculateEstimatedPreparationTime({
+      order,
+      catalog,
+      currentWorkloadInMinutes,
+    });
+
+    // Assert
+    expect(estimatedPreparationTime).toBe(18);
+  });
 });
