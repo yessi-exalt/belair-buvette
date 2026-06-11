@@ -1,26 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { calculateEstimatedPreparationTime } from '../src/acknowledge-order.js';
-
-vi.mock('../src/acknowledge-order.js', () => ({
-  calculateEstimatedPreparationTime: ({
-    order,
-    catalog,
-    currentWorkloadInMinutes,
-  }: {
-    order: { items: Array<{ articleName: string }> };
-    catalog: Array<{ name: string; category: string }>;
-    currentWorkloadInMinutes: number;
-  }) => {
-    const nonAlcoholicDrinkTypes = order.items.filter((item) =>
-      catalog.some(
-        (article) => article.name === item.articleName && article.category === 'NON_ALCOHOLIC',
-      ),
-    ).length;
-
-    return currentWorkloadInMinutes + nonAlcoholicDrinkTypes;
-  },
-}));
 
 describe('calculateEstimatedPreparationTime', () => {
   it('returns 2 minutes for 2 distinct non-alcoholic drinks with no workload', () => {
