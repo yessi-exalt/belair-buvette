@@ -1,33 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { calculateEstimatedPreparationTime } from '../src/acknowledge-order.js';
-
-vi.mock('../src/acknowledge-order.js', async () => {
-  const actual = await vi.importActual<typeof import('../src/acknowledge-order.js')>(
-    '../src/acknowledge-order.js',
-  );
-
-  return {
-    ...actual,
-    calculateEstimatedPreparationTime: (
-      params: Parameters<typeof actual.calculateEstimatedPreparationTime>[0],
-    ) => {
-      if (
-        params.currentWorkloadInMinutes === 4 &&
-        params.order.items.length === 1 &&
-        params.order.items[0]?.articleName === 'Beer' &&
-        params.order.items[0]?.quantity === 2 &&
-        params.catalog.length === 1 &&
-        params.catalog[0]?.name === 'Beer' &&
-        params.catalog[0]?.category === 'ALCOHOLIC'
-      ) {
-        return 8;
-      }
-
-      return actual.calculateEstimatedPreparationTime(params);
-    },
-  };
-});
 
 describe('calculateEstimatedPreparationTime', () => {
   it('returns 2 minutes for 2 distinct non-alcoholic drinks with no workload', () => {

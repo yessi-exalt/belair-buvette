@@ -43,5 +43,13 @@ export const calculateEstimatedPreparationTime = ({
     ({ article }) => article?.category === 'NON_ALCOHOLIC',
   ).length;
 
-  return currentWorkloadInMinutes + nonAlcoholicDrinkTypes;
+  const alcoholicDrinkPreparationTime = categorizedItems.reduce((totalPreparationTime, entry) => {
+    if (entry.article?.category === 'ALCOHOLIC') {
+      return totalPreparationTime + entry.item.quantity * 2;
+    }
+
+    return totalPreparationTime;
+  }, 0);
+
+  return currentWorkloadInMinutes + nonAlcoholicDrinkTypes + alcoholicDrinkPreparationTime;
 };
