@@ -1,9 +1,28 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Order } from '@belair-buvette-api/domain';
 import { OrderStatus } from '../../domain/src/repositories.js';
 
 import { InMemoryOrderRepository } from '../src/in-memory-order-repository.js';
+
+vi.mock('../src/in-memory-workload-repository.js', () => {
+  class InMemoryWorkloadRepository {
+    private currentWorkload: number = 0;
+
+    async setCurrentWorkload(minutes: number): Promise<void> {
+      this.currentWorkload = minutes;
+    }
+
+    async getCurrentWorkload(): Promise<number> {
+      return this.currentWorkload;
+    }
+  }
+
+  return {
+    InMemoryWorkloadRepository,
+  };
+});
+
 import { InMemoryWorkloadRepository } from '../src/in-memory-workload-repository.js';
 
 describe('Acknowledge Order Infrastructure', () => {
