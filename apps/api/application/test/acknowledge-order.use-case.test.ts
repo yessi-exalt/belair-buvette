@@ -20,6 +20,11 @@ type OrderForTest = {
 
 class FakeOrderRepository {
   public savedOrder: OrderForTest | undefined;
+  private orderStatusOverride: OrderStatus | undefined;
+
+  constructor(orderStatus?: OrderStatus) {
+    this.orderStatusOverride = orderStatus;
+  }
 
   async findById(id: string): Promise<OrderForTest> {
     return {
@@ -28,7 +33,7 @@ class FakeOrderRepository {
       items: [
         { articleName: 'Beer', quantity: 2 },
       ],
-      status: OrderStatus.Pending,
+      status: this.orderStatusOverride ?? OrderStatus.Pending,
       drinkTokenCost: 0,
       foodTokenCost: 0,
     };
@@ -111,5 +116,27 @@ describe('AcknowledgeOrderUseCase', () => {
       festivalGoerId: 'festival-goer-1',
       estimatedPreparationTime: 8,
     });
+  });
+
+  it('fails to acknowledge an order that is already acknowledged', async () => {
+    // Arrange
+    const orderRepository = new FakeOrderRepository(OrderStatus.Acknowledged);
+    const articleRepository = new FakeArticleRepository();
+    const workloadRepository = new FakeWorkloadRepository();
+    const acknowledgementNotificationGateway =
+      new FakeAcknowledgementNotificationGateway();
+    const useCase = new AcknowledgeOrderUseCase({
+      orderRepository,
+      articleRepository,
+      workloadRepository,
+      acknowledgementNotificationGateway,
+    });
+
+    // Act & Assert
+    await expect(
+      useCase.execute({
+        orderId: 'order-1',
+      }),
+    ).rejects.toThrow('OrderAlreadyAcknowledgedError');
   });
 });
