@@ -1,23 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-
-vi.mock('../src/acknowledge-order.js', async () => {
-  const actual = await vi.importActual<typeof import('../src/acknowledge-order.js')>(
-    '../src/acknowledge-order.js',
-  );
-
-  return {
-    ...actual,
-    acknowledgeOrder: ({ order, catalog, currentWorkloadInMinutes }) => ({
-      ...order,
-      status: 'ACKNOWLEDGED',
-      estimatedPreparationTime: actual.calculateEstimatedPreparationTime({
-        order,
-        catalog,
-        currentWorkloadInMinutes,
-      }),
-    }),
-  };
-});
+import { describe, expect, it } from 'vitest';
 
 import { acknowledgeOrder, calculateEstimatedPreparationTime } from '../src/acknowledge-order.js';
 import { OrderStatus } from '../src/repositories.js';

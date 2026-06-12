@@ -11,6 +11,17 @@ type CalculateEstimatedPreparationTimeParams = {
   currentWorkloadInMinutes: number;
 };
 
+type AcknowledgeOrderParams = {
+  order: Order;
+  catalog: ReadonlyArray<CatalogArticle>;
+  currentWorkloadInMinutes: number;
+};
+
+type AcknowledgedOrder = Omit<Order, 'status'> & {
+  status: 'ACKNOWLEDGED';
+  estimatedPreparationTime: number;
+};
+
 export const calculateEstimatedPreparationTime = ({
   order,
   catalog,
@@ -53,3 +64,17 @@ export const calculateEstimatedPreparationTime = ({
 
   return currentWorkloadInMinutes + nonAlcoholicDrinkTypes + alcoholicDrinkPreparationTime;
 };
+
+export const acknowledgeOrder = ({
+  order,
+  catalog,
+  currentWorkloadInMinutes,
+}: AcknowledgeOrderParams): AcknowledgedOrder => ({
+  ...order,
+  status: 'ACKNOWLEDGED',
+  estimatedPreparationTime: calculateEstimatedPreparationTime({
+    order,
+    catalog,
+    currentWorkloadInMinutes,
+  }),
+});
