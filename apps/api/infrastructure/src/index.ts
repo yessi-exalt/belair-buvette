@@ -14,4 +14,5 @@ export type { PlaceDrinkOrderResponse } from './dtos/place-drink-order-response.
 export { InMemoryOrderRepository } from './in-memory-order-repository.js';
 export { InMemoryFestivalGoerRepository } from './in-memory-festival-goer-repository.js';
 export { InMemoryArticleRepository } from './in-memory-article-repository.js';
+export { InMemoryWorkloadRepository } from './in-memory-workload-repository.js';
 export { buildPlaceDrinkOrderUseCase } from './use-cases/place-drink-order.use-case.js';
