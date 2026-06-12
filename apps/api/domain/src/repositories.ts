@@ -18,6 +18,7 @@ export enum OrderStatus {
   LegacyPending = 'PENDING',
   Ready = 'PRÊTE',
   Cancelled = 'ANNULÉE',
+  Acknowledged = 'ACKNOWLEDGED',
 }
 
 export type Order = {
@@ -27,6 +28,7 @@ export type Order = {
   status: OrderStatus;
   drinkTokenCost: number;
   foodTokenCost: number;
+  estimatedPreparationTime?: number;
 };
 
 export interface ArticleRepository {
