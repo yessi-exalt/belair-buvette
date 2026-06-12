@@ -7,7 +7,7 @@ describe('AcknowledgeOrderPersistence', () => {
   it('persists an order with Acknowledged status and estimated preparation time', async () => {
     // Arrange
     const repository = new InMemoryOrderRepository();
-    const acknowledgedOrder: Order = {
+    const acknowledgedOrder = {
       id: 'order-1',
       festivalGoerId: 'festival-goer-42',
       status: 'ACKNOWLEDGED',
@@ -15,7 +15,7 @@ describe('AcknowledgeOrderPersistence', () => {
       drinkTokenCost: 6,
       foodTokenCost: 0,
       estimatedPreparationTime: 8,
-    };
+    } as unknown as Order;
 
     // Act
     await repository.save(acknowledgedOrder);
@@ -23,6 +23,7 @@ describe('AcknowledgeOrderPersistence', () => {
 
     // Assert
     expect(found.status).toBe('ACKNOWLEDGED');
-    expect(found.estimatedPreparationTime).toBe(8);
+    expect((found as any).estimatedPreparationTime).toBe(8);
   });
 });
+
