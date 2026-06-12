@@ -301,12 +301,34 @@ vi.mock('../src/use-cases/cancel-order.use-case.js', ...)
 
 Fix: Verify file extensions and import paths align before creating production files and removing mocks.
 
+### ❌ Copying unused types from test-local code to production
+
+```typescript
+// GREEN test file had:
+type CatalogArticle = {
+  name: string;
+  category: string;
+};
+
+// Later copied verbatim to production without checking if actually used:
+export class AcknowledgeOrderUseCase {
+  async execute(command) {
+    // ... code never uses CatalogArticle type
+  }
+}
+```
+
+Result: Unused type declarations in production code indicate incomplete cleanup before refactor.
+
+Fix: Before moving production code from test to production, remove all unused type declarations and dead code. After moving, verify that no unused imports or type declarations remain in the new production file.
+
 ## Refactoring rules
 
 - Prefer existing production classes and modules over creating new abstractions.
 - Create the smallest production surface that can replace the temporary GREEN implementation.
 - **Ne cree que ce que les tests exigent.**
 - Do not create new interfaces, abstract classes, or helper types that are not directly required by the existing green tests. Only create what the tests demand.
+- **CRITICAL - Cleanup unused types:** After moving code from test to production, immediately remove all unused type declarations, unused variables, and dead code from the newly created production file. Unused types indicate copied scaffolding that should never leave the test context.
 - Keep names explicit and aligned with the team conventions from the owning app.
 - Remove duplication only after the extracted production code is covered by passing tests.
 - Keep test files focused on setup, orchestration, and assertions.
@@ -330,7 +352,8 @@ Before returning the JSON result, verify all of the following:
 - the output JSON includes every required top-level key from the schema (none omitted),
 - all required array fields are present and are arrays (even when empty),
 - the response body is raw JSON only (no Markdown fences, no preface, no trailing commentary),
-- the final state is green for the touched slice.
+- the final state is green for the touched slice,
+- **CRITICAL:** no unused type declarations, unused imports, or dead code remain in the moved production code (verify by reviewing the final production file for unused symbols).
 
 ### Additional self-check for infrastructure HTTP controller refactors
 

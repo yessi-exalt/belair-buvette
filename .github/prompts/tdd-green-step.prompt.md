@@ -262,6 +262,7 @@ Each of these rules belongs to a different RED scenario. Implement them only whe
 - Reuse existing local test patterns from the file when possible.
 - Preserve Arrange / Act / Assert structure.
 - Do not refactor unrelated code during this step.
+- **CRITICAL:** Before finishing, remove all unused type declarations, unused imports, and dead code from test-local production code. This prevents polluted refactors in the REFACTOR step.
 
 ## Required self-check before finishing
 
