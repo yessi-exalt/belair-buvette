@@ -8,7 +8,7 @@ handoffs:
   - label: Passer à l'étape Refactor
     agent: TDD Refactor step
     prompt: The test is now passing. Refactor the implementation while keeping the test green. Do not change any test assertions.
-    send: false
+    send: true
 ---
 # TDD Green Step
 
