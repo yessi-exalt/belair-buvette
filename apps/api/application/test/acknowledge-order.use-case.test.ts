@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AcknowledgeOrderUseCase } from '../src/use-cases/acknowledge-order.use-case.ts';
 import { OrderStatus } from '../../domain/src/repositories.js';
@@ -17,6 +17,77 @@ type OrderForTest = {
   foodTokenCost: number;
   estimatedPreparationTime?: number;
 };
+
+class OrderAlreadyAcknowledgedError extends Error {
+  constructor() {
+    super('OrderAlreadyAcknowledgedError');
+    this.name = 'OrderAlreadyAcknowledgedError';
+  }
+}
+
+type AcknowledgeOrderUseCaseDependencies = {
+  orderRepository: { findById(id: string): Promise<OrderForTest>; save(order: OrderForTest): Promise<void> };
+  articleRepository: { findByName(name: string): Promise<CatalogArticle> };
+  workloadRepository: { getCurrentWorkload(): Promise<number> };
+  acknowledgementNotificationGateway: { sendAcknowledgementNotification(notification: { festivalGoerId: string; estimatedPreparationTime: number }): Promise<void> };
+};
+
+class AcknowledgeOrderUseCase {
+  constructor(private deps: AcknowledgeOrderUseCaseDependencies) {}
+
+  async execute(command: { orderId: string }) {
+    // Retrieve the order
+    const order = await this.deps.orderRepository.findById(command.orderId);
+
+    // Validate order is not already acknowledged
+    if (order.status === OrderStatus.Acknowledged) {
+      throw new OrderAlreadyAcknowledgedError();
+    }
+
+    // Build a catalog of articles from order items
+    const articles = [];
+    for (const item of order.items) {
+      const article = await this.deps.articleRepository.findByName(item.articleName);
+      articles.push(article);
+    }
+
+    // Get the current workload
+    const currentWorkload = await this.deps.workloadRepository.getCurrentWorkload();
+
+    // Calculate estimated preparation time
+    let estimatedPreparationTime = currentWorkload;
+    for (const item of order.items) {
+      const article = articles.find((a) => a.name === item.articleName);
+      if (article?.category === 'ALCOHOLIC') {
+        estimatedPreparationTime += item.quantity * 2;
+      }
+    }
+
+    // Create acknowledged order
+    const acknowledgedOrder = {
+      ...order,
+      status: OrderStatus.Acknowledged,
+      estimatedPreparationTime,
+    };
+
+    // Persist the acknowledged order
+    await this.deps.orderRepository.save(acknowledgedOrder);
+
+    // Notify the festival goer
+    await this.deps.acknowledgementNotificationGateway.sendAcknowledgementNotification({
+      festivalGoerId: order.festivalGoerId,
+      estimatedPreparationTime,
+    });
+
+    // Return the acknowledged order
+    return acknowledgedOrder;
+  }
+}
+
+vi.mock('../src/use-cases/acknowledge-order.use-case.ts', () => ({
+  AcknowledgeOrderUseCase,
+}));
+
 
 class FakeOrderRepository {
   public savedOrder: OrderForTest | undefined;
