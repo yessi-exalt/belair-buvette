@@ -62,13 +62,18 @@ class FakeArticleRepository {
 
 class FakeOrderRepository {
   public savedOrder: OrderWithTokenCosts | undefined;
+  private orderStatus: OrderStatus;
+
+  constructor(orderStatus: OrderStatus = OrderStatus.Pending) {
+    this.orderStatus = orderStatus;
+  }
 
   async findById(id: string): Promise<OrderWithTokenCosts> {
     return {
       id,
       festivalGoerId: 'festival-goer-42',
       items: [{ articleName: 'Mojito', quantity: 1 }],
-      status: OrderStatus.Pending,
+      status: this.orderStatus,
       drinkTokenCost: 1,
       foodTokenCost: 0,
     };
@@ -76,6 +81,40 @@ class FakeOrderRepository {
 
   async save(order: OrderWithTokenCosts): Promise<void> {
     this.savedOrder = order;
+  }
+}
+
+class FakeChangeRequestRepository {
+  public savedChangeRequest:
+    | {
+        orderId: string;
+        festivalGoerId: string;
+        requestedChanges: Array<{ articleName: string; quantity: number }>;
+      }
+    | undefined;
+
+  async save(changeRequest: {
+    orderId: string;
+    festivalGoerId: string;
+    requestedChanges: Array<{ articleName: string; quantity: number }>;
+  }): Promise<void> {
+    this.savedChangeRequest = changeRequest;
+  }
+}
+
+class FakeBartenderNotificationGateway {
+  public sentNotification:
+    | {
+        orderId: string;
+        requestedChanges: Array<{ articleName: string; quantity: number }>;
+      }
+    | undefined;
+
+  async notifyRequestedChanges(notification: {
+    orderId: string;
+    requestedChanges: Array<{ articleName: string; quantity: number }>;
+  }): Promise<void> {
+    this.sentNotification = notification;
   }
 }
 
@@ -120,5 +159,46 @@ describe('ChangeOrderUseCase', () => {
       drinkTokenBalance: 2,
       foodTokenBalance: 4,
     });
+  });
+
+  it('persists a bartender review request and notifies the bartender when the order is acknowledged', async () => {
+    // Arrange
+    const festivalGoerRepository = new FakeFestivalGoerRepository();
+    const articleRepository = new FakeArticleRepository();
+    const orderRepository = new FakeOrderRepository(OrderStatus.Acknowledged);
+    const changeRequestRepository = new FakeChangeRequestRepository();
+    const bartenderNotificationGateway = new FakeBartenderNotificationGateway();
+    const useCase = new ChangeOrderUseCase({
+      festivalGoerRepository,
+      articleRepository,
+      orderRepository,
+      changeRequestRepository,
+      bartenderNotificationGateway,
+    });
+
+    // Act
+    await useCase.execute({
+      orderId: 'order-123',
+      festivalGoerId: 'festival-goer-42',
+      itemsToAdd: [
+        {
+          articleName: 'Mojito',
+          quantity: 1,
+        },
+      ],
+    });
+
+    // Assert
+    expect(changeRequestRepository.savedChangeRequest).toEqual({
+      orderId: 'order-123',
+      festivalGoerId: 'festival-goer-42',
+      requestedChanges: [{ articleName: 'Mojito', quantity: 1 }],
+    });
+    expect(bartenderNotificationGateway.sentNotification).toEqual({
+      orderId: 'order-123',
+      requestedChanges: [{ articleName: 'Mojito', quantity: 1 }],
+    });
+    expect(orderRepository.savedOrder).toBeUndefined();
+    expect(festivalGoerRepository.savedFestivalGoer).toBeUndefined();
   });
 });
