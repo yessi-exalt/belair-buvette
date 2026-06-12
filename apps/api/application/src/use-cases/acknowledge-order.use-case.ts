@@ -1,5 +1,5 @@
 import type { OrderRepository, ArticleRepository } from '@belair-buvette-api/domain';
-import { OrderStatus } from '@belair-buvette-api/domain';
+import { OrderStatus, OrderNotFoundError } from '@belair-buvette-api/domain';
 
 type WorkloadRepository = {
   getCurrentWorkload(): Promise<number>;
@@ -29,6 +29,11 @@ export class AcknowledgeOrderUseCase {
   async execute(command: AcknowledgeOrderCommand) {
     // Retrieve the order
     const order = await this.deps.orderRepository.findById(command.orderId);
+
+    // Validate order exists
+    if (!order) {
+      throw new OrderNotFoundError();
+    }
 
     // Build a catalog of articles from order items
     const articles = [];
