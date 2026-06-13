@@ -1,4 +1,9 @@
 ---
+# MODIFICATIONS APPORTÉES :
+# 1. handoffs[0].agent : "agent" → "TDD Red step" (nom exact de l'agent Red)
+# 2. handoffs[0].send : false → true (envoi automatique du JSON Refactor au Red sans copier-coller)
+# 3. Handoff guard : le handoff vers Red ne se déclenche que si status === "passed"
+#    (anciennement : aucune condition, le handoff pouvait s'activer même en cas d'échec)
 name: TDD Refactor step
 description: Refactor the code produced during the GREEN step in the Belair's Buvette monorepo without changing behavior, validating after each micro-step, and return a structured JSON result.
 argument-hint: REFACTOR phase only. Paste the JSON output from the TDD Green step.
@@ -6,9 +11,9 @@ tools: ['execute/runInTerminal', 'read/problems', 'read/readFile', 'edit/createF
 model: GPT-5.4 (copilot)
 handoffs:
   - label: Démarrer un nouveau cycle TDD
-    agent: agent
+    agent: TDD Red step
     prompt: The refactor is complete. Start the next TDD cycle with a new failing test scenario.
-    send: false
+    send: true
 ---
 # TDD Refactor Step
 
@@ -70,7 +75,7 @@ Expected input format:
   "testFilesModified": [
     "apps/api/application/test/place-drink-order.use-case.test.ts"
   ],
-  "validationCommand": "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
+  "validationCommand": "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"...\"",
   "notes": [
     "Minimal test-local implementation added.",
     "No production files were modified."
@@ -298,6 +303,11 @@ If `scope` is `infrastructure` and an HTTP handler was involved, also verify:
 
 If one of these checks fails, keep working or return `blocked` / `failed` with the reason in `notes`.
 
+## Handoff condition
+
+Only trigger the handoff to the Red agent if `status` is `"passed"`.
+If `status` is `"failed"` or `"blocked"`, report the blocking reason to the user and stop without triggering the handoff.
+
 ## Run commands
 
 - API targeted test example: `cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t "<exact test name>"`
@@ -353,23 +363,18 @@ Input:
   "app": "api",
   "scope": "application",
   "testFilePath": "apps/api/application/test/place-drink-order.use-case.test.ts",
-  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock, quand le festivalier passe une commande pour 1 \"Mojito\", alors la commande est créée avec le statut \"EN_ATTENTE\" et le festivalier reçoit un identifiant de commande",
+  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock...",
   "implementationLocation": "apps/api/application/test/place-drink-order.use-case.test.ts",
   "productionFilesModified": [],
-  "testFilesModified": [
-    "apps/api/application/test/place-drink-order.use-case.test.ts"
-  ],
-  "validationCommand": "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
-  "notes": [
-    "Minimal test-local implementation added.",
-    "No production files were modified."
-  ]
+  "testFilesModified": ["apps/api/application/test/place-drink-order.use-case.test.ts"],
+  "validationCommand": "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"...\"",
+  "notes": ["Minimal test-local implementation added.", "No production files were modified."]
 }
 ```
 
 Expected outcome:
 
-- move the temporary use-case implementation out of `apps/api/application/test/place-drink-order.use-case.test.ts`
+- move the temporary use-case implementation out of the test file
 - place the production code in the appropriate file under `apps/api/application/src/`
 - remove obsolete test-local production logic
 - run a focused test after each micro-step
@@ -398,80 +403,13 @@ Example JSON output:
     "apps/api/application/test/place-drink-order.use-case.test.ts"
   ],
   "validationCommands": [
-    "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
+    "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"...\"",
     "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts"
   ],
   "microStepCount": 3,
   "notes": [
     "Temporary GREEN implementation moved into production code.",
     "Behavior preserved while removing test-local production logic.",
-    "Focused validation was run after each micro-step."
-  ]
-}
-```
-
-### Frontend REFACTOR example
-
-Input:
-
-```json
-{
-  "phase": "GREEN",
-  "status": "passed",
-  "app": "frontend",
-  "scope": "packages/application",
-  "testFilePath": "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts",
-  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock, quand le festivalier passe une commande pour 1 \"Mojito\", alors la commande est créée avec le statut \"EN_ATTENTE\" et le festivalier reçoit un identifiant de commande",
-  "implementationLocation": "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts",
-  "productionFilesModified": [],
-  "testFilesModified": [
-    "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts"
-  ],
-  "validationCommand": "cd apps/frontend && pnpm test -- packages/application/src/__tests__/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
-  "notes": [
-    "Minimal test-local implementation added.",
-    "No production files were modified."
-  ]
-}
-```
-
-Expected outcome:
-
-- move the temporary application service out of the test file into `apps/frontend/packages/application/src/`
-- simplify test setup and naming without changing assertions or scenario data
-- run one focused frontend test after each micro-step
-- finish with the selected test and one touched-slice validation still green
-- return JSON only
-
-Example JSON output:
-
-```json
-{
-  "phase": "REFACTOR",
-  "status": "passed",
-  "app": "frontend",
-  "scope": "packages/application",
-  "testFilePath": "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts",
-  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock, quand le festivalier passe une commande pour 1 \"Mojito\", alors la commande est créée avec le statut \"EN_ATTENTE\" et le festivalier reçoit un identifiant de commande",
-  "implementationLocations": [
-    "apps/frontend/packages/application/src/use-cases/place-drink-order.use-case.ts",
-    "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts"
-  ],
-  "productionFilesModified": [
-    "apps/frontend/packages/application/src/use-cases/place-drink-order.use-case.ts",
-    "apps/frontend/packages/application/src/index.ts"
-  ],
-  "testFilesModified": [
-    "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts"
-  ],
-  "validationCommands": [
-    "cd apps/frontend && pnpm test -- packages/application/src/__tests__/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
-    "cd apps/frontend && pnpm test -- packages/application/src/__tests__/place-drink-order.use-case.test.ts"
-  ],
-  "microStepCount": 4,
-  "notes": [
-    "Temporary GREEN implementation moved into production code.",
-    "Naming and duplication were cleaned up without changing behavior.",
     "Focused validation was run after each micro-step."
   ]
 }

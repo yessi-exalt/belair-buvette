@@ -1,4 +1,9 @@
 ---
+# MODIFICATIONS APPORTÉES :
+# 1. handoffs[0].agent : "agent" → "TDD Green step" (nom exact de l'agent Green)
+# 2. handoffs[0].send : false → true (envoi automatique du JSON au Green sans copier-coller manuel)
+# 3. Output JSON : ajout des champs "phase" et "status" pour compatibilité avec le Refactor agent
+#    (anciennement : description / test_file_path / test_method_name uniquement)
 name: TDD Red step
 description: Write exactly one failing test scenario in the Belair's Buvette monorepo without touching production code.
 argument-hint: RED phase only. Provide one exact scenario or one issue reference, for example: "apps/api/docs/features/place-drink-order/application_place-drink-order-issue.md scenario 1".
@@ -6,9 +11,9 @@ tools: ['execute/runInTerminal', 'read/problems', 'read/readFile', 'edit/createF
 model: GPT-5.4 (copilot)
 handoffs:
   - label: Passer à l'étape Green
-    agent: agent
+    agent: TDD Green step
     prompt: The test is now written. Implement the minimal production code to make it pass.
-    send: false
+    send: true
 ---
 # TDD Red Step
 
@@ -196,15 +201,24 @@ Before outputting the JSON summary, verify every item:
 - [ ] Only one `it()` block was added
 - [ ] The test file path matches the naming rules for the chosen layer
 
+## Handoff condition
+
+Only trigger the handoff to the Green agent if `status` is `"failed"` (the test fails as expected).
+If the test passes unexpectedly or the run is `"blocked"`, report to the user and stop without triggering the handoff.
+
 ## Output Format
 
-Before ending every turn, output a structured summary of what was done. This summary is used by the Green agent to locate the failing test without searching the conversation history.
+Before ending every turn, output a structured summary of what was done. This summary is sent automatically to the Green agent via handoff.
 
 ```json
 {
-  "description": "<short description of the test scenario implemented>",
-  "test_file_path": "<relative path to the test file created or modified>",
-  "test_method_name": "<exact name of the it() block added>"
+  "phase": "RED",
+  "status": "failed",
+  "app": "api | frontend",
+  "scope": "domain | application | infrastructure | packages/domain | packages/application | packages/infrastructure | packages/ui | e2e",
+  "testFilePath": "<relative path to the test file created or modified>",
+  "testName": "<exact name of the it() block added>",
+  "description": "<short description of the test scenario implemented>"
 }
 ```
 
@@ -212,8 +226,12 @@ Example:
 
 ```json
 {
-  "description": "Successfully export contacts",
-  "test_file_path": "src/domain/use-cases/__tests__/export-contacts.use-case.test.ts",
-  "test_method_name": "given 20 contacts, when use case executes, then returns all contacts"
+  "phase": "RED",
+  "status": "failed",
+  "app": "api",
+  "scope": "application",
+  "testFilePath": "apps/api/application/test/place-drink-order.use-case.test.ts",
+  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock, quand le festivalier passe une commande pour 1 \"Mojito\", alors la commande est créée avec le statut \"EN_ATTENTE\" et le festivalier reçoit un identifiant de commande",
+  "description": "Place drink order — happy path, application layer"
 }
 ```

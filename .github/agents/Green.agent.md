@@ -1,7 +1,14 @@
 ---
+# MODIFICATIONS APPORTÉES :
+# 1. Input étendu : accepte désormais le JSON RED (phase/status/app/scope/testFilePath/testName)
+#    en plus du format texte "path :: testName" — compatibilité avec le handoff automatique depuis Red
+# 2. Handoff guard : le handoff vers Refactor ne se déclenche que si status === "passed"
+#    (anciennement : aucune condition, le handoff pouvait s'activer même en cas d'échec)
+# 3. handoffs[0].agent : valeur inchangée "TDD Refactor step" — déjà correct
+# 4. handoffs[0].send : true — inchangé, déjà correct
 name: TDD Green step
 description: Make exactly one previously failing test pass in the Belair's Buvette monorepo with the minimum test-local code change and return a structured JSON result.
-argument-hint: GREEN phase only. Provide the failing test file path and the exact test name, for example: "apps/api/application/test/place-drink-order.use-case.test.ts :: étant donné un festivalier identifié...".
+argument-hint: GREEN phase only. Provide the failing test file path and the exact test name, for example: "apps/api/application/test/place-drink-order.use-case.test.ts :: étant donné un festivalier identifié...". Also accepts the JSON output of the RED step directly.
 tools: ['execute/runInTerminal', 'read/problems', 'read/readFile', 'edit/createFile', 'edit/editFiles', 'search']
 model: GPT-5.4 (copilot)
 handoffs:
@@ -29,18 +36,27 @@ Stop immediately after validating that the selected test passes.
 
 ## Input
 
-The input for this prompt is the test created during the RED step:
+The input for this prompt is either:
 
+### Option A — Plain text (manual entry)
 - the path to the failing test file
 - the exact name of the test method or test case that must pass
 
-Expected input format:
-
+Expected format:
 ```text
 <test-file-path> :: <exact test name>
 ```
 
-Examples:
+### Option B — RED step JSON (automatic handoff)
+The full JSON output of the RED step, containing at minimum:
+- `phase`: must be `"RED"`
+- `status`: must be `"failed"` — if status is not `"failed"`, ask the user to re-run the RED step and stop
+- `testFilePath`
+- `testName`
+
+If `phase` is not `"RED"` or `status` is not `"failed"`, ask for clarification and stop.
+
+Examples (Option A):
 
 ```text
 apps/api/application/test/place-drink-order.use-case.test.ts :: étant donné un festivalier identifié et un article "Mojito" disponible en stock, quand le festivalier passe une commande pour 1 "Mojito", alors la commande est créée avec le statut "EN_ATTENTE" et le festivalier reçoit un identifiant de commande
@@ -59,7 +75,7 @@ If either the file path or the exact test name is missing, ask for clarification
 
 ## Workflow
 
-1. Parse the input, normalize any legacy frontend `src/tests/` path to the actual existing workspace path when unambiguous, and load the target test file.
+1. Parse the input (plain text or RED JSON), normalize any legacy frontend `src/tests/` path to the actual existing workspace path when unambiguous, and load the target test file.
 2. Determine the owning app and scope from the normalized test file path.
 3. Inspect only the minimum nearby context needed to understand why that single test currently fails.
 4. Implement the minimum code necessary to make that one test pass.
@@ -222,45 +238,6 @@ This is allowed only when:
 
 The selected test covers only the happy path. Do not implement business rules whose failure is not asserted by this test — even if those rules are correct domain knowledge.
 
-**Balance check — not required by the happy-path test:**
-
-```typescript
-// WRONG — the test never checks what happens when the balance is empty
-async execute(command) {
-  const festivalGoer = await this.festivalGoerRepository.findById(command.festivalGoerId);
-  if (festivalGoer.tokenBalance < this.calculateTokenCost(command.items)) {
-    throw new InsufficientBalanceError();
-  }
-  return this.deps.placeOrderGateway.execute(command);
-}
-```
-
-**Stock check — not required by the happy-path test:**
-
-```typescript
-// WRONG — the test never checks what happens when an article is out of stock
-async execute(command) {
-  for (const item of command.items) {
-    const article = await this.catalogRepository.findByName(item.articleName);
-    if (!article.inStock) throw new OutOfStockError(item.articleName);
-  }
-  return this.deps.placeOrderGateway.execute(command);
-}
-```
-
-**Input validation — not required by the happy-path test:**
-
-```typescript
-// WRONG — the test never asserts on invalid festivalGoerId or zero quantity
-async execute(command) {
-  if (!command.festivalGoerId) throw new Error('festivalGoerId is required');
-  if (command.items.some(i => i.quantity <= 0)) throw new Error('Quantity must be positive');
-  return this.deps.placeOrderGateway.execute(command);
-}
-```
-
-Each of these rules belongs to a different RED scenario. Implement them only when that scenario's test is the selected input.
-
 ## Implementation rules
 
 - Prefer local test doubles, local helper classes, and local fixtures inside the target test file.
@@ -280,6 +257,11 @@ Before returning the JSON result, verify all of the following:
 - that targeted test passes.
 
 If one of these checks fails, keep working or return `blocked` / `failed` with the reason in `notes`.
+
+## Handoff condition
+
+Only trigger the handoff to the Refactor agent if `status` is `"passed"`.
+If `status` is `"failed"` or `"blocked"`, report the blocking reason to the user and stop without triggering the handoff.
 
 ## Run commands
 
@@ -317,10 +299,24 @@ If validation cannot be completed, still return JSON only with `status` set to `
 
 ### Backend GREEN example
 
-Input:
+Input (Option A):
 
 ```text
 apps/api/application/test/place-drink-order.use-case.test.ts :: étant donné un festivalier identifié et un article "Mojito" disponible en stock, quand le festivalier passe une commande pour 1 "Mojito", alors la commande est créée avec le statut "EN_ATTENTE" et le festivalier reçoit un identifiant de commande
+```
+
+Input (Option B — RED JSON handoff):
+
+```json
+{
+  "phase": "RED",
+  "status": "failed",
+  "app": "api",
+  "scope": "application",
+  "testFilePath": "apps/api/application/test/place-drink-order.use-case.test.ts",
+  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock, quand le festivalier passe une commande pour 1 \"Mojito\", alors la commande est créée avec le statut \"EN_ATTENTE\" et le festivalier reçoit un identifiant de commande",
+  "description": "Place drink order — happy path, application layer"
+}
 ```
 
 Expected outcome:
@@ -346,45 +342,6 @@ Example JSON output:
     "apps/api/application/test/place-drink-order.use-case.test.ts"
   ],
   "validationCommand": "cd apps/api/application && pnpm test -- test/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
-  "notes": [
-    "Minimal test-local implementation added.",
-    "No production files were modified."
-  ]
-}
-```
-
-### Frontend GREEN example
-
-Input:
-
-```text
-apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts :: étant donné un festivalier identifié et un article "Mojito" disponible en stock, quand le festivalier passe une commande pour 1 "Mojito", alors la commande est créée avec le statut "EN_ATTENTE" et le festivalier reçoit un identifiant de commande
-```
-
-Expected outcome:
-
-- update only `apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts`
-- add the smallest test-local implementation needed inside that file
-- run only the targeted test and confirm it passes
-- if the input used the legacy `src/tests/` form, normalize the output to the canonical existing workspace path
-- return JSON only
-
-Example JSON output:
-
-```json
-{
-  "phase": "GREEN",
-  "status": "passed",
-  "app": "frontend",
-  "scope": "packages/application",
-  "testFilePath": "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts",
-  "testName": "étant donné un festivalier identifié et un article \"Mojito\" disponible en stock, quand le festivalier passe une commande pour 1 \"Mojito\", alors la commande est créée avec le statut \"EN_ATTENTE\" et le festivalier reçoit un identifiant de commande",
-  "implementationLocation": "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts",
-  "productionFilesModified": [],
-  "testFilesModified": [
-    "apps/frontend/packages/application/src/__tests__/place-drink-order.use-case.test.ts"
-  ],
-  "validationCommand": "cd apps/frontend && pnpm test -- packages/application/src/__tests__/place-drink-order.use-case.test.ts -t \"étant donné un festivalier identifié et un article \\\"Mojito\\\" disponible en stock, quand le festivalier passe une commande pour 1 \\\"Mojito\\\", alors la commande est créée avec le statut \\\"EN_ATTENTE\\\" et le festivalier reçoit un identifiant de commande\"",
   "notes": [
     "Minimal test-local implementation added.",
     "No production files were modified."
