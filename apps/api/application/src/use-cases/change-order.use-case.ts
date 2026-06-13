@@ -87,20 +87,11 @@ export class ChangeOrderUseCase {
       return;
     }
 
-    // Build updated items and costs
-    const updatedItems = [...order.items];
-    let newDrinkTokenCost = order.drinkTokenCost;
-    let newFoodTokenCost = order.foodTokenCost;
-
-    for (const itemToAdd of command.itemsToAdd) {
-      const article = await this.dependencies.articleRepository.findByName(
-        itemToAdd.articleName,
-      );
-
-      updatedItems.push({ articleName: itemToAdd.articleName, quantity: itemToAdd.quantity });
-      newDrinkTokenCost += article.drinkTokenCost * itemToAdd.quantity;
-      newFoodTokenCost += (article.tokenCost - article.drinkTokenCost) * itemToAdd.quantity;
-    }
+    const {
+      items: updatedItems,
+      drinkTokenCost: newDrinkTokenCost,
+      foodTokenCost: newFoodTokenCost,
+    } = await this.buildUpdatedOrder(order, command.itemsToAdd);
 
     const remainingDrinkTokenBalance = festivalGoer.drinkTokenBalance - newDrinkTokenCost;
     const remainingFoodTokenBalance = festivalGoer.foodTokenBalance - newFoodTokenCost;
@@ -123,5 +114,34 @@ export class ChangeOrderUseCase {
       drinkTokenCost: newDrinkTokenCost,
       foodTokenCost: newFoodTokenCost,
     });
+  }
+
+  private async buildUpdatedOrder(
+    order: OrderWithTokenCosts,
+    itemsToAdd: Array<{ articleName: string; quantity: number }>,
+  ): Promise<{
+    items: Array<{ articleName: string; quantity: number }>;
+    drinkTokenCost: number;
+    foodTokenCost: number;
+  }> {
+    const updatedItems = [...order.items];
+    let newDrinkTokenCost = order.drinkTokenCost;
+    let newFoodTokenCost = order.foodTokenCost;
+
+    for (const itemToAdd of itemsToAdd) {
+      const article = await this.dependencies.articleRepository.findByName(
+        itemToAdd.articleName,
+      );
+
+      updatedItems.push({ articleName: itemToAdd.articleName, quantity: itemToAdd.quantity });
+      newDrinkTokenCost += article.drinkTokenCost * itemToAdd.quantity;
+      newFoodTokenCost += (article.tokenCost - article.drinkTokenCost) * itemToAdd.quantity;
+    }
+
+    return {
+      items: updatedItems,
+      drinkTokenCost: newDrinkTokenCost,
+      foodTokenCost: newFoodTokenCost,
+    };
   }
 }
