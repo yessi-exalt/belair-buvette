@@ -1,7 +1,16 @@
+
+---<!--
+Points observés :
+- L’agent ne disposait pas de `run_subagent` dans la liste `tools` (corrigé)
+- Le handoff JSON manque un état courant clair
+- L’agent ne maintient pas le contexte entre Red, Green et Refactor
+- Le cycle ne propose pas explicitement un nouveau tour après refactor
+-->
+
 name: TDD-Cycle agent 
 description: Orchestrate a full TDD cycle in the Belair's Buvette monorepo by delegating to the Red, Green, and Refactor subagents.
 argument-hint: Start a new TDD cycle with a feature description, test scenario, or issue reference.
-tools: ['execute/runInTerminal', 'read/problems', 'read/readFile', 'edit/createFile', 'edit/editFiles', 'search']
+tools: ['execute/runInTerminal', 'read/problems', 'read/readFile', 'edit/createFile', 'edit/editFiles', 'search', 'run_subagent']
 handoffs:
   - label: Passer à l'étape Red
     agent: TDD Red step
