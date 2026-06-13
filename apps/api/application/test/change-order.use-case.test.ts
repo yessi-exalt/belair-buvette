@@ -45,18 +45,40 @@ class FakeFestivalGoerRepository {
 
 class FakeArticleRepository {
   async findByName(name: string): Promise<ArticleInCatalog> {
-    if (name !== 'Mojito') {
-      throw new Error(`Unknown article in test double: ${name}`);
+    if (name === 'Mojito') {
+      return {
+        id: 'article-mojito',
+        name: 'Mojito',
+        stock: 10,
+        tokenCost: 1,
+        drinkTokenCost: 1,
+        category: 'ALCOHOLIC',
+      };
     }
 
-    return {
-      id: 'article-mojito',
-      name: 'Mojito',
-      stock: 10,
-      tokenCost: 1,
-      drinkTokenCost: 1,
-      category: 'ALCOHOLIC',
-    };
+    if (name === 'Premium Drink') {
+      return {
+        id: 'article-premium-drink',
+        name: 'Premium Drink',
+        stock: 5,
+        tokenCost: 2,
+        drinkTokenCost: 2,
+        category: 'ALCOHOLIC',
+      };
+    }
+
+    if (name === 'Meal') {
+      return {
+        id: 'article-meal',
+        name: 'Meal',
+        stock: 5,
+        tokenCost: 1,
+        drinkTokenCost: 0,
+        category: 'ALCOHOLIC',
+      };
+    }
+
+    throw new Error(`Unknown article in test double: ${name}`);
   }
 }
 
@@ -197,6 +219,52 @@ describe('ChangeOrderUseCase', () => {
     expect(bartenderNotificationGateway.sentNotification).toEqual({
       orderId: 'order-123',
       requestedChanges: [{ articleName: 'Mojito', quantity: 1 }],
+    });
+    expect(orderRepository.savedOrder).toBeUndefined();
+    expect(festivalGoerRepository.savedFestivalGoer).toBeUndefined();
+  });
+
+  it('fails with an InsufficientTokensError when the revised Pending order exceeds the available balance and preserves the original order', async () => {
+    // Arrange
+    const festivalGoerRepository = new FakeFestivalGoerRepository();
+    const articleRepository = new FakeArticleRepository();
+
+    class FakePendingOrderRepository extends FakeOrderRepository {
+      async findById(id: string): Promise<OrderWithTokenCosts> {
+        return {
+          id,
+          festivalGoerId: 'festival-goer-42',
+          items: [
+            { articleName: 'Mojito', quantity: 1 },
+            { articleName: 'Meal', quantity: 1 },
+          ],
+          status: OrderStatus.Pending,
+          drinkTokenCost: 1,
+          foodTokenCost: 1,
+        };
+      }
+    }
+
+    const orderRepository = new FakePendingOrderRepository();
+    const useCase = new ChangeOrderUseCase({
+      festivalGoerRepository,
+      articleRepository,
+      orderRepository,
+    });
+
+    // Act
+    const act = useCase.execute({
+      orderId: 'order-123',
+      festivalGoerId: 'festival-goer-42',
+      itemsToAdd: [
+        { articleName: 'Premium Drink', quantity: 1 },
+        { articleName: 'Meal', quantity: 1 },
+      ],
+    });
+
+    // Assert
+    await expect(act).rejects.toMatchObject({
+      name: 'InsufficientTokensError',
     });
     expect(orderRepository.savedOrder).toBeUndefined();
     expect(festivalGoerRepository.savedFestivalGoer).toBeUndefined();
