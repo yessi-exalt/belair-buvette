@@ -33,3 +33,21 @@ export class OrderNotCancellableError extends Error {
     this.name = 'OrderNotCancellableError';
   }
 }
+
+export class InsufficientTokensError extends Error {
+  readonly type = 'INSUFFICIENT_TOKENS' as const;
+
+  constructor() {
+    super('Insufficient tokens for the requested operation');
+    this.name = 'InsufficientTokensError';
+  }
+}
+
+export class InsufficientPooledTokensError extends Error {
+  readonly type = 'INSUFFICIENT_POOLED_TOKENS' as const;
+
+  constructor() {
+    super('Insufficient pooled tokens for the requested group order');
+    this.name = 'InsufficientPooledTokensError';
+  }
+}

@@ -2,6 +2,11 @@
 
 export { validateArticleInCatalog } from './validate-article-in-catalog.js';
 export {
+  evaluateOrderChange,
+  type EvaluateOrderChangeInput,
+  type OrderChangeEvaluation,
+} from './change-order.js';
+export {
   reserveStockForOrder,
   type ArticleStock,
   type ReserveStockResult,
@@ -11,6 +16,8 @@ export {
   ArticleInconnuException,
   OrderNotFoundError,
   OrderNotCancellableError,
+  InsufficientTokensError,
+  InsufficientPooledTokensError,
 } from './exceptions.js';
 export {
   OrderStatus,
