@@ -226,7 +226,17 @@ describe('ChangeOrderUseCase', () => {
 
   it('fails with an InsufficientTokensError when the revised Pending order exceeds the available balance and preserves the original order', async () => {
     // Arrange
-    const festivalGoerRepository = new FakeFestivalGoerRepository();
+    class FakeLowBalanceFestivalGoerRepository extends FakeFestivalGoerRepository {
+      async findById(id: string): Promise<FestivalGoerWithTokenBalances> {
+        return {
+          id,
+          drinkTokenBalance: 1,
+          foodTokenBalance: 1,
+        };
+      }
+    }
+
+    const festivalGoerRepository = new FakeLowBalanceFestivalGoerRepository();
     const articleRepository = new FakeArticleRepository();
 
     class FakePendingOrderRepository extends FakeOrderRepository {
