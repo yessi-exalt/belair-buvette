@@ -16,4 +16,6 @@ export { InMemoryFestivalGoerRepository } from './in-memory-festival-goer-reposi
 export { InMemoryArticleRepository } from './in-memory-article-repository.js';
 export { InMemoryWorkloadRepository } from './in-memory-workload-repository.js';
 export { InMemoryAcknowledgementNotificationGateway } from './in-memory-acknowledgement-notification-gateway.js';
+export { InMemoryChangeRequestRepository } from './in-memory-change-request-repository.js';
+export { InMemoryBartenderNotificationGateway } from './in-memory-bartender-notification-gateway.js';
 export { buildPlaceDrinkOrderUseCase } from './use-cases/place-drink-order.use-case.js';
