@@ -26,18 +26,29 @@ class FakeArticleRepository {
   public savedArticle: SavedArticle | undefined;
 
   async findByName(name: string): Promise<SavedArticle> {
-    if (name !== 'Mojito') {
-      throw new Error(`Unknown article in test double: ${name}`);
+    if (name === 'Mojito') {
+      return {
+        id: 'article-2',
+        name: 'Mojito',
+        stock: 10,
+        tokenCost: 1,
+        drinkTokenCost: 1,
+        category: 'ALCOHOLIC',
+      };
     }
 
-    return {
-      id: 'article-2',
-      name: 'Mojito',
-      stock: 10,
-      tokenCost: 1,
-      drinkTokenCost: 1,
-      category: 'ALCOHOLIC',
-    };
+    if (name === 'Bière Pale Ale') {
+      return {
+        id: 'article-3',
+        name: 'Bière Pale Ale',
+        stock: 10,
+        tokenCost: 1,
+        drinkTokenCost: 1,
+        category: 'ALCOHOLIC',
+      };
+    }
+
+    throw new Error(`Unknown article in test double: ${name}`);
   }
 
   async save(article: SavedArticle): Promise<void> {
@@ -103,6 +114,46 @@ describe('PlaceDrinkOrderUseCase', () => {
     expect(articleRepository.savedArticle).toEqual({
       id: 'article-2',
       name: 'Mojito',
+      stock: 8,
+      tokenCost: 1,
+      drinkTokenCost: 1,
+      category: 'ALCOHOLIC',
+    });
+  });
+
+  it('creates a pending order and decrements the Bière Pale Ale stock by 2 when 10 units are available', async () => {
+    // Arrange
+    const festivalGoerRepository = new FakeFestivalGoerRepository();
+    const articleRepository = new FakeArticleRepository();
+    const orderRepository = new FakeOrderRepository();
+    const useCase = new PlaceDrinkOrderUseCase({
+      festivalGoerRepository,
+      articleRepository,
+      orderRepository,
+    });
+
+    // Act
+    const result = await useCase.execute({
+      festivalGoerId: 'festival-goer-1',
+      items: [
+        {
+          articleName: 'Bière Pale Ale',
+          quantity: 2,
+        },
+      ],
+    });
+
+    // Assert
+    expect(result.status).toBe('PENDING');
+    expect(orderRepository.savedOrder).toEqual({
+      id: 'order-123',
+      festivalGoerId: 'festival-goer-1',
+      items: [{ articleName: 'Bière Pale Ale', quantity: 2 }],
+      status: 'PENDING',
+    });
+    expect(articleRepository.savedArticle).toEqual({
+      id: 'article-3',
+      name: 'Bière Pale Ale',
       stock: 8,
       tokenCost: 1,
       drinkTokenCost: 1,
